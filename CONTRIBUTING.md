@@ -6,7 +6,7 @@ Apache 2.0 and welcomes contributions from anyone working with Ollama + Gemma 3.
 ## Getting Started
 
 ```bash
-git clone https://github.com/YOUR-ORG/citation-pipeline.git
+git clone https://github.com/sandrcoast/citation-pipeline
 cd citation-pipeline
 
 # Run tests (no dependencies needed)
@@ -77,7 +77,7 @@ All PRs must pass the stdlib-only test suite at minimum.
 
 When filing issues, please include:
 - Your Ollama version and Gemma 3 model tag
-- OS (Windows 11, Linux distro, macOS version)
+- OS
 - Python version
 - Whether you're using ChromaDB or Qdrant
 - Relevant error output
