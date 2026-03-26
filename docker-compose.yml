@@ -1,0 +1,82 @@
+# docker-compose.yml — Full citation pipeline stack
+#
+# Services:
+#   - ollama: LLM backend (Gemma 3)
+#   - middleware: Citation extraction proxy (FastAPI)
+#   - searxng: Self-hosted web search (no API keys needed)
+#   - postgres: Relational storage with TTL
+#   - chromadb: Vector storage (optional — middleware embeds it by default)
+#
+# Quick start:
+#   docker-compose up -d
+#   ollama pull gemma3          # inside ollama container
+#   ollama create gemma3-cite -f /modelfiles/Modelfile
+#
+# Then point your client to http://localhost:8000 instead of :11434
+
+version: "3.8"
+
+services:
+  # ── Ollama (LLM backend) ───────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+      - ./ollama_patch:/modelfiles  # mount our Modelfile
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  # ── Citation Middleware (the proxy) ────────────────────────────────
+  middleware:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"   # ← clients connect here instead of Ollama
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+      - SEARXNG_URL=http://searxng:8080
+      - PG_DSN=postgresql://citation_user:citation_pass@postgres:5432/citations
+      - RETENTION_DAYS=180
+    depends_on:
+      - ollama
+      - searxng
+      - postgres
+    restart: unless-stopped
+
+  # ── SearXNG (self-hosted search) ──────────────────────────────────
+  searxng:
+    image: searxng/searxng:latest
+    ports:
+      - "8888:8080"
+    volumes:
+      - searxng_data:/etc/searxng
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8888
+    restart: unless-stopped
+
+  # ── PostgreSQL (relational storage) ───────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: citations
+      POSTGRES_USER: citation_user
+      POSTGRES_PASSWORD: citation_pass
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
+  searxng_data:
+  pg_data:

@@ -1,0 +1,997 @@
+{
+  "citations": [
+    {
+      "title": "Mining electronic health records: towards better research applications and clinical care",
+      "type": "journal_article",
+      "authors": [
+        "Jensen PB Jensen LJ",
+        "Brunak S"
+      ],
+      "date": "2012",
+      "style": "Vancouver",
+      "publisher": "Nat Rev",
+      "url": null
+    },
+    {
+      "title": "Big data application in biomedical research and health care: a literature review",
+      "type": "journal_article",
+      "authors": [
+        "Luo J Wu M",
+        "Gopukumar D Zhao Y"
+      ],
+      "date": "2016",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Medical image data and datasets in the era of machine learning-whitepaper from the 2016 C-MIMI meeting dataset session",
+      "type": "journal_article",
+      "authors": [
+        "Kohli MD Summers RM",
+        "Geis JR"
+      ],
+      "date": "2017",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Representation learning: a review and new perspectives",
+      "type": "journal_article",
+      "authors": [
+        "Bengio Y Courville A",
+        "Vincent P"
+      ],
+      "date": "2013",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Deep learning",
+      "type": "journal_article",
+      "authors": [
+        "LeCun Y Bengio Y",
+        "Hinton G"
+      ],
+      "date": "2015",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "A convolutional neural network cascade for face detection",
+      "type": "conference_paper",
+      "authors": [
+        "Li H Lin Z",
+        "Shen X Brandt J",
+        "Hua G"
+      ],
+      "date": "2015",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Learning from millions of 3D scans for large-scale 3D face recognition. 2017",
+      "type": "preprint",
+      "authors": [
+        "Gilani SZ Mian A"
+      ],
+      "date": "2017",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": "http://arxiv.org/abs/1711.05942"
+    },
+    {
+      "title": "Toward driving scene understanding: a dataset for learning driver behavior and causal reasoning",
+      "type": "conference_paper",
+      "authors": [
+        "Ramanishka V Chen Y-T",
+        "Misu T Saenko K"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Event-based vision meets deep learning on steering prediction for self-driving cars. 2018",
+      "type": "preprint",
+      "authors": [
+        "Maqueda AI Loquercio A",
+        "Gallego G Garcia N",
+        "Scaramuzza D"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": "http://arxiv.org/abs/1804.01310"
+    },
+    {
+      "title": "Training millions of personalized dialogue agents. 2018",
+      "type": "preprint",
+      "authors": [
+        "Mazare P-E Humeau S",
+        "Raison M Bordes A"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": "http://arxiv.org/abs/1809.01984"
+    },
+    {
+      "title": "Personalizing dialogue agents: I have a dog, do you have pets too? 2018",
+      "type": "preprint",
+      "authors": [
+        "Zhang S Dinan E",
+        "Urbanek J Szlam A",
+        "Kiela D Weston J"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": "http://arxiv.org/abs/1801.07243"
+    },
+    {
+      "title": "Google's neural machine translation system: bridging the gap between human and machine translation. 2016",
+      "type": "preprint",
+      "authors": [
+        "Wu Y Schuster M",
+        "Chen Z"
+      ],
+      "date": "2016",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": "http://arxiv.org/abs/1609.08144"
+    },
+    {
+      "title": "PubMed. 2019",
+      "type": "journal_article",
+      "authors": [
+        "US National Library of Medicine National Institutes of Health"
+      ],
+      "date": "2019",
+      "style": "Vancouver",
+      "publisher": "PubMed",
+      "url": "https://www.ncbi.nlm.nih.gov/pubmed/?term=Machine+Learning"
+    },
+    {
+      "title": "The discipline of machine learning, vol. 9",
+      "type": "journal_article",
+      "authors": [
+        "Mitchell TM"
+      ],
+      "date": "2006",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "The perceptron: A probabilistic model for information storage and organization in the brain",
+      "type": "journal_article",
+      "authors": [
+        "Rosenblatt F"
+      ],
+      "date": "1958",
+      "style": "Vancouver",
+      "publisher": "Psychol Rev",
+      "url": "http://dx.doi.org/10.1037/h0042519"
+    },
+    {
+      "title": "Genomic selection using regularized linear regression models: ridge regression, lasso, elastic net and their extensions",
+      "type": "journal_article",
+      "authors": [
+        "Ogutu JO Schulz-Streeck T",
+        "Piepho H-P"
+      ],
+      "date": "2012",
+      "style": "Vancouver",
+      "publisher": "BMC Proc",
+      "url": null
+    },
+    {
+      "title": "ImageNet classification with deep convolutional neural networks",
+      "type": "conference_paper",
+      "authors": [
+        "Krizhevsky A Sutskever I",
+        "Hinton GE"
+      ],
+      "date": "2012",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Going deeper with convolutions. 2014",
+      "type": "preprint",
+      "authors": [
+        "Szegedy C Liu W",
+        "Jia Y"
+      ],
+      "date": "2014",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": "http://arxiv.org/abs/1409.4842"
+    },
+    {
+      "title": "The present and future of deep learning in radiology",
+      "type": "journal_article",
+      "authors": [
+        "Saba L Biswas M",
+        "Kuppili V"
+      ],
+      "date": "2019",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Development and validation of a deep learning algorithm for detection of diabetic retinopathy in retinal fundus photographs",
+      "type": "journal_article",
+      "authors": [
+        "Gulshan V Peng L",
+        "Coram M Stumpe MC",
+        "Wu D Narayanaswamy A"
+      ],
+      "date": "2016",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Dermatologist-level classification of skin cancer with deep neural networks",
+      "type": "journal_article",
+      "authors": [
+        "Esteva A Kuprel B",
+        "Novoa RA"
+      ],
+      "date": "2017",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Man against machine: diagnostic performance of a deep learning convolutional neural network for dermoscopic melanoma recognition in comparison to 58 dermatologists",
+      "type": "journal_article",
+      "authors": [
+        "Haenssle HA Fink C",
+        "Schneiderbauer R"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Clinically applicable deep learning for diagnosis and referral in retinal disease",
+      "type": "journal_article",
+      "authors": [
+        "De Fauw J Ledsam JR",
+        "Romera-Paredes B"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": "Nat Med",
+      "url": null
+    },
+    {
+      "title": "Prediction of cardiovascular risk factors from retinal fundus photographs via deep learning",
+      "type": "journal_article",
+      "authors": [
+        "Poplin R Varadarajan AV",
+        "Blumer K"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": "Nat Biomed Eng",
+      "url": null
+    },
+    {
+      "title": "A critical review of recurrent neural networks for sequence learning. 2015",
+      "type": "preprint",
+      "authors": [
+        "Lipton ZC Berkowitz J",
+        "Elkan C"
+      ],
+      "date": "2015",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": "http://arxiv.org/abs/1506.00019"
+    },
+    {
+      "title": "Learning internal representations by error propagation",
+      "type": "conference_paper",
+      "authors": [
+        "Rumelhart DE McClelland JL"
+      ],
+      "date": "1987",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Reducing the dimensionality of data with neural networks",
+      "type": "journal_article",
+      "authors": [
+        "Hinton GE Salakhutdinov RR"
+      ],
+      "date": "2006",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Generative adversarial networks. 2014",
+      "type": "preprint",
+      "authors": [
+        "Goodfellow IJ Pouget-Abadie J",
+        "Mirza M"
+      ],
+      "date": "2014",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": "http://arxiv.org/abs/1406.2661"
+    },
+    {
+      "title": "Medical image synthesis for data augmentation and anonymization using generative adversarial networks",
+      "type": "conference_paper",
+      "authors": [
+        "Shin H-C Tenenholtz NA",
+        "Rogers JK"
+      ],
+      "date": null,
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Benchmarking state-of-the-art deep learning software tools. 2016",
+      "type": "preprint",
+      "authors": [
+        "Shi S Wang Q",
+        "Xu P Chu X"
+      ],
+      "date": "2016",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": "http://arxiv.org/abs/1608.07249"
+    },
+    {
+      "title": "Usability study of distributed deep learning frameworks for convolutional neural networks. 2018",
+      "type": "journal_article",
+      "authors": [
+        "Liu J Dutta J",
+        "Li N Kurup U",
+        "Shah M"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": "https://www.kdd.org/kdd2018/files/deep-learning-day/DLDay18_paper_29.pdf"
+    },
+    {
+      "title": "Alzheimer's Disease Neuroimaging Initiative (ADNI): clinical characterization",
+      "type": "journal_article",
+      "authors": [
+        "Petersen RC Aisen PS",
+        "Beckett LA"
+      ],
+      "date": "2010",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "The Multimodal Brain Tumor Image Segmentation Benchmark (BRATS)",
+      "type": "journal_article",
+      "authors": [
+        "Menze BH Jakab A",
+        "Bauer S"
+      ],
+      "date": "2015",
+      "style": "Vancouver",
+      "publisher": "IEEE Trans Med",
+      "url": null
+    },
+    {
+      "title": "Deep learning-based feature representation for AD/MCI classification",
+      "type": "journal_article",
+      "authors": [
+        "Suk H-I Shen D"
+      ],
+      "date": "2013",
+      "style": "Vancouver",
+      "publisher": "Med Image Comput Comput",
+      "url": null
+    },
+    {
+      "title": "Natural image bases to represent neuroimaging data",
+      "type": "conference_paper",
+      "authors": [
+        "Gupta A Ayhan M",
+        "Maida A"
+      ],
+      "date": "2013",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Robust deep learning for improved classification of AD/MCI Patients",
+      "type": "journal_article",
+      "authors": [
+        "Li F Tran L",
+        "Thung K-H Ji S",
+        "Shen D Li J"
+      ],
+      "date": null,
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Early diagnosis of Alzheimer's disease with deep learning",
+      "type": "conference_paper",
+      "authors": [
+        "Liu S Liu S",
+        "Cai W Pujol S",
+        "Kikinis R Feng D"
+      ],
+      "date": "2014",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": "http://ieeexplore.ieee.org"
+    },
+    {
+      "title": "Multimodal neuroimaging feature learning for multiclass diagnosis of Alzheimer's disease",
+      "type": "journal_article",
+      "authors": [
+        "Liu S Liu S",
+        "Cai W"
+      ],
+      "date": "2015",
+      "style": "Vancouver",
+      "publisher": "IEEE Trans Biomed Eng",
+      "url": null
+    },
+    {
+      "title": "Latent feature representation with stacked auto-encoder for AD/MCI diagnosis",
+      "type": "journal_article",
+      "authors": [
+        "Suk H-I Lee S-W",
+        "Shen D"
+      ],
+      "date": "2015",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Classification of Alzheimer's disease using fMRI data and deep learning convolutional neural networks. 2016",
+      "type": "preprint",
+      "authors": [
+        "Sarraf S Tofighi G"
+      ],
+      "date": "2016",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": "http://arxiv.org/abs/1603.08631"
+    },
+    {
+      "title": "Deep sparse multi-task learning for feature selection in Alzheimer's disease diagnosis",
+      "type": "journal_article",
+      "authors": [
+        "Suk H-I Lee S-W",
+        "Shen D"
+      ],
+      "date": "2016",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Deep residual nets for improved Alzheimer's diagnosis",
+      "type": "conference_paper",
+      "authors": [
+        "Valliani A Soni A"
+      ],
+      "date": "2017",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Predicting Alzheimer's disease: a neuroimaging study with 3D convolutional neural networks. 2015",
+      "type": "preprint",
+      "authors": [
+        "Payan A Montana G"
+      ],
+      "date": "2015",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": "http://arxiv.org/abs/1502.02506"
+    },
+    {
+      "title": "Alzheimer's disease diagnostics by a deeply supervised adaptable 3D convolutional network. 2016",
+      "type": "preprint",
+      "authors": [
+        "Hosseini-Asl E Gimel'farb G",
+        "El-Baz A"
+      ],
+      "date": "2016",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": "http://arxiv.org/abs/1607.00556"
+    },
+    {
+      "title": "Alzheimer's disease diagnostics by a 3D deeply supervised adaptable convolutional network",
+      "type": "journal_article",
+      "authors": [
+        "Hosseini-Asl E Ghazal M",
+        "Mahmoud A"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "A deep learning based approach to classification of CT brain images",
+      "type": "conference_paper",
+      "authors": [
+        "Gao XW Hui R"
+      ],
+      "date": "2016",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": "http://ieeexplore.ieee.org"
+    },
+    {
+      "title": "A deep learning model to predict a diagnosis of Alzheimer disease by using 18F-FDG PET of the brain",
+      "type": "journal_article",
+      "authors": [
+        "Ding Y Sohn JH",
+        "Kawczynski MG"
+      ],
+      "date": "2019",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Automated deep-neural-network surveillance of cranial images for acute neurologic events",
+      "type": "journal_article",
+      "authors": [
+        "Titano JJ Badgeley M",
+        "Schefflein J"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": "Nat Med",
+      "url": null
+    },
+    {
+      "title": "Natural language-based machine learning models for the annotation of clinical radiology reports",
+      "type": "journal_article",
+      "authors": [
+        "Zech J Pain M",
+        "Titano J"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Advanced machine learning in action: identification of intracranial hemorrhage on computed tomography scans of the head with clinical workflow integration",
+      "type": "journal_article",
+      "authors": [
+        "Arbabshirani MR Fornwalt BK",
+        "Mongelluzzo GJ"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": "NPJ Digit Med",
+      "url": null
+    },
+    {
+      "title": "Deep learning algorithms for detection of critical findings in head CT scans: a retrospective study",
+      "type": "journal_article",
+      "authors": [
+        "Chilamkurthy S Ghosh R",
+        "Tanamala S"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "An explainable deep-learning algorithm for the detection of acute intracranial haemorrhage from small datasets",
+      "type": "journal_article",
+      "authors": [
+        "Lee H Yune S",
+        "Mansouri M"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": "Nat Biomed Eng",
+      "url": "https://doi.org/10.1038/s41551-018-0324-9"
+    },
+    {
+      "title": "DeepNAT: deep convolutional neural network for segmenting neuroanatomy",
+      "type": "journal_article",
+      "authors": [
+        "Wachinger C Reuter M",
+        "Klein T"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Population-based studies on incidence, survival rates, and genetic alterations in astrocytic and oligodendroglial gliomas",
+      "type": "journal_article",
+      "authors": [
+        "Ohgaki H Kleihues P"
+      ],
+      "date": "2005",
+      "style": "Vancouver",
+      "publisher": "J Neuropathol Exp Neurol",
+      "url": null
+    },
+    {
+      "title": "Progenitor cells and glioma formation",
+      "type": "journal_article",
+      "authors": [
+        "Holland EC"
+      ],
+      "date": "2001",
+      "style": "Vancouver",
+      "publisher": "Curr Opin Neurol",
+      "url": null
+    },
+    {
+      "title": "Whole brain segmentation: automated labeling of neuroanatomical structures in the human brain",
+      "type": "journal_article",
+      "authors": [
+        "Fischl B Salat DH",
+        "Busa E Albert M",
+        "Dieterich M Haselgrove C"
+      ],
+      "date": "2002",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "MICCAI 2012 workshop on multi-atlas labeling",
+      "type": "conference_paper",
+      "authors": [
+        "Landman B Warfield S"
+      ],
+      "date": "2012",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "A U-Net deep learning framework for high performance vessel segmentation in patients with cerebrovascular disease",
+      "type": "journal_article",
+      "authors": [
+        "Livne M Rieger J",
+        "Aydin OU"
+      ],
+      "date": "2019",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Neuroimmune mechanisms of cytokine-induced depression: current theories and novel treatment strategies",
+      "type": "journal_article",
+      "authors": [
+        "Loftis JM Huckans M",
+        "Morasco BJ"
+      ],
+      "date": "2010",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Social stress induces neurovascular pathology promoting depression",
+      "type": "journal_article",
+      "authors": [
+        "Menard C Pfau ML",
+        "Hodes GE"
+      ],
+      "date": "2017",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Multi-channel multi-scale fully convolutional network for 3D perivascular spaces segmentation in 7T MR images",
+      "type": "journal_article",
+      "authors": [
+        "Lian C Zhang J",
+        "Liu M"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Dilated saliency U-Net for white matter hyperintensities segmentation using irregularity age map",
+      "type": "journal_article",
+      "authors": [
+        "Jeong Y Rachmadi MF",
+        "Valdes-Hernandez MDC Komura T"
+      ],
+      "date": "2019",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Regional distribution of white matter hyperintensities in vascular dementia, Alzheimer's disease and healthy aging",
+      "type": "journal_article",
+      "authors": [
+        "Gootjes L Teipel SJ",
+        "Zebuhr Y"
+      ],
+      "date": "2004",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Saliency U-Net: A regional saliency map-driven hybrid deep learning network for anomaly segmentation",
+      "type": "conference_paper",
+      "authors": [
+        "Karargyros A Syeda-Mahmood T"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Classification on ADHD with deep learning",
+      "type": "conference_paper",
+      "authors": [
+        "Kuang D He L"
+      ],
+      "date": "2014",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": "http://ieeexplore.ieee.org"
+    },
+    {
+      "title": "State-space model with deep learning for functional dynamics estimation in resting-state fMRI",
+      "type": "journal_article",
+      "authors": [
+        "Suk H-I Wee C-Y",
+        "Lee S-W Shen D"
+      ],
+      "date": "2016",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Resting state fMRI functional connectivity-based classification using a convolutional neural network architecture",
+      "type": "journal_article",
+      "authors": [
+        "Meszlenyi RJ Buza K",
+        "Vidnyanszky Z"
+      ],
+      "date": "2017",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "On the number of linear regions of deep neural networks",
+      "type": "conference_paper",
+      "authors": [
+        "Montufar GF Pascanu R",
+        "Cho K Bengio Y"
+      ],
+      "date": null,
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Resting state functional magnetic resonance imaging and neural network classified autism and control",
+      "type": "journal_article",
+      "authors": [
+        "Iidaka T"
+      ],
+      "date": "2015",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Multivariate classification of autism spectrum disorder using frequency-specific resting-state functional connectivity-a multi-center study",
+      "type": "journal_article",
+      "authors": [
+        "Chen H Duan X",
+        "Liu F"
+      ],
+      "date": "2016",
+      "style": "Vancouver",
+      "publisher": "Prog Neuropsychopharmacol Biol",
+      "url": null
+    },
+    {
+      "title": "Discrimination of ADHD based on fMRI data with deep belief network",
+      "type": "journal_article",
+      "authors": [
+        "Kuang D Guo X",
+        "An X Zhao Y",
+        "He L"
+      ],
+      "date": null,
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Deep learning for detection of focal epileptiform discharges from scalp EEG recordings",
+      "type": "journal_article",
+      "authors": [
+        "Tjepkema-Cloostermans MC de Carvalho RCV",
+        "van Putten MJAM"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "A long short-term memory deep learning network for the prediction of epileptic seizures using EEG signals",
+      "type": "journal_article",
+      "authors": [
+        "Tsiouris KM Pezoulas VC",
+        "Zervakis M Konitsiotis S",
+        "Koutsouris DD Fotiadis DI"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": "Comput Biol Med",
+      "url": null
+    },
+    {
+      "title": "Deep convolutional neural network for the automated detection and diagnosis of seizure using EEG signals",
+      "type": "journal_article",
+      "authors": [
+        "Acharya UR Oh SL",
+        "Hagiwara Y Tan JH",
+        "Adeli H"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": "Comput Biol Med",
+      "url": null
+    },
+    {
+      "title": "A generalised seizure prediction with convolutional neural networks for intracranial and scalp electroencephalogram data analysis. 2017",
+      "type": "preprint",
+      "authors": [
+        "Truong ND Nguyen AD",
+        "Kuhlmann L Bonyadi MR",
+        "Yang J Kavehei O"
+      ],
+      "date": "2017",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": "http://arxiv.org/abs/1707.01976"
+    },
+    {
+      "title": "Focal onset seizure prediction using convolutional networks",
+      "type": "journal_article",
+      "authors": [
+        "Khan H Marcuse L",
+        "Fields M Swann K",
+        "Yener B"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": "IEEE Trans Biomed Eng",
+      "url": null
+    },
+    {
+      "title": "Predicting clinical outcomes from large scale cancer genomic profiles with deep survival models",
+      "type": "journal_article",
+      "authors": [
+        "Yousefi S Amrollahi F",
+        "Amgad M"
+      ],
+      "date": "2017",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Whole-genome deep-learning analysis identifies contribution of noncoding mutations to autism risk",
+      "type": "journal_article",
+      "authors": [
+        "Zhou J Park CY",
+        "Theesfeld CL"
+      ],
+      "date": "2019",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    },
+    {
+      "title": "Association of genomic subtypes of lower-grade gliomas with shape features automatically extracted by a deep learning algorithm",
+      "type": "journal_article",
+      "authors": [
+        "Buda M Saha A",
+        "Mazurowski MA"
+      ],
+      "date": "2019",
+      "style": "Vancouver",
+      "publisher": "Comput Biol Med",
+      "url": null
+    },
+    {
+      "title": "Predicting cancer outcomes from histology and genomics using convolutional networks",
+      "type": "journal_article",
+      "authors": [
+        "Mobadersany P Yousefi S",
+        "Amgad M"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": "Proc Natl Acad Sci",
+      "url": null
+    },
+    {
+      "title": "Variable generalization performance of a deep learning model to detect pneumonia in chest radiographs: a cross-sectional study",
+      "type": "journal_article",
+      "authors": [
+        "Zech JR Badgeley MA",
+        "Liu M Costa AB",
+        "Titano JJ Oermann EK"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": "PLoS Med",
+      "url": null
+    },
+    {
+      "title": "Confounding variables can degrade generalization performance of radiological deep learning models. 2018",
+      "type": "preprint",
+      "authors": [
+        "Zech JR Badgeley MA",
+        "Liu M Costa AB",
+        "Titano JJ Oermann EK"
+      ],
+      "date": "2018",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": "http://arxiv.org/abs/1807.00431"
+    },
+    {
+      "title": "Dissecting racial bias in an algorithm that guides health decisions for 70 million people",
+      "type": "conference_paper",
+      "authors": [
+        "Obermeyer Z Mullainathan S"
+      ],
+      "date": "2019",
+      "style": "Vancouver",
+      "publisher": null,
+      "url": null
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+# Ollama Modelfile for Gemma 3 with citation awareness
+#
+# This Modelfile extends the base Gemma 3 model with system-level
+# instructions that make it citation-aware. When the middleware
+# sends extraction prompts, the model is already primed for the task.
+#
+# Build: ollama create gemma3-cite -f Modelfile
+# Run:   ollama run gemma3-cite
+
+FROM gemma3
+
+# Citation-aware system prompt. This doesn't change normal conversation
+# but makes the model better at structured extraction when asked.
+SYSTEM """You are a helpful assistant with strong academic citation awareness.
+
+When asked to extract citations, you return ONLY valid JSON arrays with no markdown formatting.
+Each citation object must include: title, authors (array), date, source_type, citation_style, publisher, doi, url, raw_fragment, confidence.
+
+For normal conversations, respond naturally and helpfully. When you reference academic sources,
+try to include author names and publication years in your responses."""
+
+# Low temperature for reliable structured output during extraction
+PARAMETER temperature 0.3
+
+# Reasonable context for handling page-length text inputs
+PARAMETER num_ctx 8192
+
+# Stop sequences to prevent runaway generation during extraction
+PARAMETER stop "```"
+PARAMETER stop "\n\nNote:"
+PARAMETER stop "\n\nExplanation:"
