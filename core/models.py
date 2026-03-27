@@ -25,6 +25,8 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+from config import cfg
+
 
 # ── Enums ─────────────────────────────────────────────────────────────────
 
@@ -228,7 +230,7 @@ class PromptCitationResult(BaseModel):
     """
     prompt_id: str
     user_query: str
-    model: str = "gemma3"
+    model: str = cfg.OLLAMA_MODEL
     citations: list[CitationRecord] = Field(default_factory=list)
     extraction_time_ms: int = 0
     created_at: datetime = Field(default_factory=datetime.utcnow)

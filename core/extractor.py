@@ -42,49 +42,45 @@ logger = logging.getLogger(__name__)
 
 # ── Configuration ─────────────────────────────────────────────────────────
 
+from config import cfg
+
 @dataclass
 class ExtractorConfig:
-    """Tunable knobs. Adjust per-hardware."""
+    """
+    Tunable knobs. Defaults are loaded from config.py (the central config).
+    Override per-instance or via environment variables.
+    """
 
-    ollama_url: str = "http://localhost:11434"
-    model: str = "gemma3"  # Ollama model tag
+    ollama_url: str = cfg.OLLAMA_URL
+    model: str = cfg.OLLAMA_MODEL
 
-    # Concurrency: how many extraction calls to Ollama at once.
-    # Gemma 3 on a single GPU → keep this low (3-5).
-    # Multi-GPU or quantized → can go higher.
-    max_concurrent_extractions: int = 5
+    # Concurrency
+    max_concurrent_extractions: int = cfg.MAX_CONCURRENT_EXTRACTIONS
+    max_concurrent_fetches: int = cfg.MAX_CONCURRENT_FETCHES
 
-    # How many URLs to fetch concurrently (I/O bound, can be high)
-    max_concurrent_fetches: int = 20
+    # Text truncation
+    max_text_head_chars: int = cfg.MAX_TEXT_HEAD_CHARS
+    max_text_tail_chars: int = cfg.MAX_TEXT_TAIL_CHARS
 
-    # Text truncation: we send only this many chars to Gemma for extraction.
-    # Bibliographies are usually near the end, so we take last N chars too.
-    max_text_head_chars: int = 2000  # first N chars (abstract, intro citations)
-    max_text_tail_chars: int = 3000  # last N chars — DEFAULT for typical articles
+    # Bibliography chunking
+    max_refs_per_chunk: int = cfg.MAX_REFS_PER_CHUNK
+    gemma3_max_input_chars: int = cfg.GEMMA_MAX_INPUT_CHARS
 
-    # Dynamic tail sizing: if a bibliography section is detected,
-    # we extract the FULL bibliography instead of a fixed tail.
-    # For very long bibliographies (>200 refs), we chunk into segments
-    # and send each chunk to Gemma 3 separately.
-    max_refs_per_chunk: int = 30     # Gemma 3 handles ~30 refs per call reliably
-    gemma3_max_input_chars: int = 25000  # ~6K tokens, safe within 8192 ctx
-
-    # PDF fallback: when HTML extraction looks incomplete, try the PDF.
-    # Works for publishers with predictable PDF URLs (Springer, Elsevier, etc.)
-    enable_pdf_fallback: bool = True
-    pdf_fetch_timeout_s: int = 15
+    # PDF fallback
+    enable_pdf_fallback: bool = cfg.ENABLE_PDF_FALLBACK
+    pdf_fetch_timeout_s: int = cfg.PDF_FETCH_TIMEOUT_S
 
     # Timeouts
-    ollama_timeout_s: int = 30
-    fetch_timeout_s: int = 8
+    ollama_timeout_s: int = cfg.OLLAMA_TIMEOUT_S
+    fetch_timeout_s: int = cfg.FETCH_TIMEOUT_S
 
     # Search
-    searxng_url: str = "http://localhost:8888"  # self-hosted SearXNG
-
-    # Optional: restrict search to specific domains (e.g., your org's digital library).
-    # Leave empty to search the open web only.
-    # Example: ["library.myorg.edu", "arxiv.org", "scholar.google.com"]
+    searxng_url: str = cfg.SEARXNG_URL
     scoped_domains: list = None  # type: ignore
+
+    def __post_init__(self):
+        if self.scoped_domains is None:
+            self.scoped_domains = cfg.SCOPED_DOMAINS
 
 
 # ── Extraction Prompt ─────────────────────────────────────────────────────

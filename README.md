@@ -31,8 +31,8 @@ PYTHONPATH=. python tests/test_core_logic.py
 docker-compose up -d
 
 # Pull and configure Gemma 3
-docker exec -it citation-pipeline-ollama-1 ollama pull gemma3
-docker exec -it citation-pipeline-ollama-1 ollama create gemma3-cite -f /modelfiles/Modelfile
+docker exec -it citation-pipeline-ollama-1 ollama pull gemma3:1b
+docker exec -it citation-pipeline-ollama-1 ollama create gemma3-1b-cite -f /modelfiles/Modelfile
 
 # Start the middleware
 pip install -r requirements.txt
@@ -43,11 +43,11 @@ uvicorn middleware.proxy:app --host 0.0.0.0 --port 8000 --workers 4
 ```bash
 # Without citations (transparent proxy — same as Ollama)
 curl http://localhost:8000/api/generate \
-  -d '{"model":"gemma3-cite","prompt":"What is attention in neural networks?"}'
+  -d '{"model":"gemma3-1b-cite","prompt":"What is attention in neural networks?"}'
 
 # With citations (adds citation_metadata to response)
 curl http://localhost:8000/api/generate \
-  -d '{"model":"gemma3-cite","prompt":"What is attention in neural networks?","citations":true}'
+  -d '{"model":"gemma3-1b-cite","prompt":"What is attention in neural networks?","citations":true}'
 ```
 
 ### 4. Retrieve citations later (A2A compatible)
@@ -79,7 +79,7 @@ curl http://localhost:8000/api/citations/search/attention%20mechanisms
 
 ```json
 {
-  "model": "gemma3-cite",
+  "model": "gemma3-1b-cite",
   "response": "Attention mechanisms allow neural networks to...",
   "_prompt_id": "a1b2c3d4-...",
 

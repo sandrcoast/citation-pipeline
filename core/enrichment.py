@@ -28,26 +28,19 @@ if TYPE_CHECKING:
 
 import aiohttp
 
+from config import cfg
+
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class EnricherConfig:
-    """Configuration for the CrossRef enrichment step."""
+    """Configuration for the CrossRef enrichment step. Defaults from config.py."""
 
-    # CrossRef polite pool: include a mailto for better rate limits
-    # See: https://github.com/CrossRef/rest-api-doc#good-manners--more-reliable-service
-    mailto: str = "citation-pipeline@example.com"  # ← set to your real email
-
-    # Concurrency: CrossRef allows ~50 req/s for polite users
-    max_concurrent: int = 10
-
-    # Timeout per request
-    timeout_s: int = 5
-
-    # Minimum confidence to accept a CrossRef match
-    # CrossRef returns a score; we normalize it to 0-1
-    min_match_score: float = 0.75
+    mailto: str = cfg.CROSSREF_MAILTO
+    max_concurrent: int = cfg.CROSSREF_MAX_CONCURRENT
+    timeout_s: int = cfg.CROSSREF_TIMEOUT_S
+    min_match_score: float = cfg.CROSSREF_MIN_MATCH_SCORE
 
 
 class CrossRefEnricher:

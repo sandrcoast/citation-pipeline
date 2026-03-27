@@ -39,6 +39,8 @@ from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from config import cfg
+
 from core.extractor import CitationExtractor, ExtractorConfig, SourceText
 from core.models import PromptCitationResult
 from storage.store import CitationStore, StoreConfig
@@ -85,7 +87,7 @@ class GenerateRequest(BaseModel):
     Ollama-compatible /api/generate request, extended with citation flag.
     Existing Ollama clients work unchanged — `citations` defaults to False.
     """
-    model: str = "gemma3"
+    model: str = cfg.OLLAMA_MODEL
     prompt: str
     system: Optional[str] = None
     stream: bool = False
@@ -102,7 +104,7 @@ class ChatRequest(BaseModel):
     """
     Ollama-compatible /api/chat request with citation extension.
     """
-    model: str = "gemma3"
+    model: str = cfg.OLLAMA_MODEL
     messages: list[dict]
     stream: bool = False
     options: Optional[dict] = None
@@ -246,7 +248,7 @@ async def health():
 
 # ── Internal Helpers ──────────────────────────────────────────────────────
 
-OLLAMA_URL = "http://localhost:11434"
+OLLAMA_URL = cfg.OLLAMA_URL
 
 
 async def _forward_to_ollama(path: str, payload: dict) -> Optional[dict]:

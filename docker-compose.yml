@@ -9,8 +9,8 @@
 #
 # Quick start:
 #   docker-compose up -d
-#   ollama pull gemma3          # inside ollama container
-#   ollama create gemma3-cite -f /modelfiles/Modelfile
+#   ollama pull gemma3:1b          # inside ollama container
+#   ollama create gemma3-1b-cite -f /modelfiles/Modelfile
 #
 # Then point your client to http://localhost:8000 instead of :11434
 

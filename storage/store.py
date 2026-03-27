@@ -35,6 +35,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from core.models import CitationRecord, PromptCitationResult
+from config import cfg
 
 logger = logging.getLogger(__name__)
 
@@ -43,29 +44,28 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class StoreConfig:
-    """Storage configuration. All values have sane defaults."""
+    """Storage configuration. Defaults loaded from config.py."""
 
     # ChromaDB settings (embedded mode — no server needed)
-    chroma_persist_dir: str = "./data/chromadb"
-    chroma_collection: str = "citations"
+    chroma_persist_dir: str = cfg.CHROMA_PERSIST_DIR
+    chroma_collection: str = cfg.CHROMA_COLLECTION
 
     # PostgreSQL settings
-    pg_dsn: str = "postgresql://citation_user:password@localhost:5432/citations_db"
+    pg_dsn: str = cfg.PG_DSN
 
     # Retention policy
-    retention_days: int = 180  # 6 months default
-    cleanup_interval_hours: int = 24  # run cleanup daily
-    soft_delete_grace_days: int = 30  # grace period before hard delete
+    retention_days: int = cfg.RETENTION_DAYS
+    cleanup_interval_hours: int = cfg.CLEANUP_INTERVAL_HOURS
+    soft_delete_grace_days: int = cfg.SOFT_DELETE_GRACE_DAYS
 
     # Embedding model for vector search
-    # Uses Ollama's embedding endpoint with the same Gemma model
-    ollama_url: str = "http://localhost:11434"
-    embedding_model: str = "gemma3"  # Ollama model for embeddings
+    ollama_url: str = cfg.OLLAMA_URL
+    embedding_model: str = cfg.OLLAMA_MODEL
 
-    # Qdrant alternative (set use_qdrant=True to switch)
-    use_qdrant: bool = False
-    qdrant_url: str = "http://localhost:6333"
-    qdrant_collection: str = "citations"
+    # Qdrant alternative (set USE_QDRANT=true to switch)
+    use_qdrant: bool = cfg.USE_QDRANT
+    qdrant_url: str = cfg.QDRANT_URL
+    qdrant_collection: str = cfg.QDRANT_COLLECTION
 
 
 # ── ChromaDB Vector Store ─────────────────────────────────────────────────

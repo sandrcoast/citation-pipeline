@@ -4,10 +4,13 @@
 # instructions that make it citation-aware. When the middleware
 # sends extraction prompts, the model is already primed for the task.
 #
-# Build: ollama create gemma3-cite -f Modelfile
-# Run:   ollama run gemma3-cite
+# IMPORTANT: The FROM line must match your OLLAMA_MODEL in config.py.
+# Default: gemma3:1b (lightest). Change to gemma3:4b, gemma3:12b, etc.
+#
+# Build: ollama create gemma3-1b-cite -f Modelfile
+# Run:   ollama run gemma3-1b-cite
 
-FROM gemma3
+FROM gemma3:1b
 
 # Citation-aware system prompt. This doesn't change normal conversation
 # but makes the model better at structured extraction when asked.
