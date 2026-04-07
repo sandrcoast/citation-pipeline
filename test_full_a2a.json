@@ -1,10 +1,10 @@
 {
   "schema": "citation_extraction",
   "version": "1.0",
-  "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
+  "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
   "model": "gemma3",
   "total_citations": 83,
-  "extraction_time_ms": 5,
+  "extraction_time_ms": 16,
   "citations": [
     {
       "type": "citation_record",
@@ -23,8 +23,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988016"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.877434"
     },
     {
       "type": "citation_record",
@@ -43,8 +43,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988150"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.877434"
     },
     {
       "type": "citation_record",
@@ -63,8 +63,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988193"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.877434"
     },
     {
       "type": "citation_record",
@@ -83,8 +83,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988220"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.877434"
     },
     {
       "type": "citation_record",
@@ -103,8 +103,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988240"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.877434"
     },
     {
       "type": "citation_record",
@@ -124,8 +124,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988267"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.877434"
     },
     {
       "type": "citation_record",
@@ -143,8 +143,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988292"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.877434"
     },
     {
       "type": "citation_record",
@@ -163,8 +163,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988325"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.877434"
     },
     {
       "type": "citation_record",
@@ -184,8 +184,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988356"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.877434"
     },
     {
       "type": "citation_record",
@@ -204,8 +204,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988377"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.877434"
     },
     {
       "type": "citation_record",
@@ -225,8 +225,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988489"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.877434"
     },
     {
       "type": "citation_record",
@@ -245,8 +245,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988514"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.877434"
     },
     {
       "type": "citation_record",
@@ -264,8 +264,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988541"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.877434"
     },
     {
       "type": "citation_record",
@@ -283,8 +283,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988564"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.877434"
     },
     {
       "type": "citation_record",
@@ -302,8 +302,8 @@
       "doi": "10.1037/h0042519",
       "discovery_method": "in_page_bibliography",
       "confidence": 0.98,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988585"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.877434"
     },
     {
       "type": "citation_record",
@@ -322,8 +322,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988609"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.877434"
     },
     {
       "type": "citation_record",
@@ -342,8 +342,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988634"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.877434"
     },
     {
       "type": "citation_record",
@@ -362,8 +362,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988653"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -382,8 +382,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988673"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -403,8 +403,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988700"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -423,8 +423,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988719"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -443,8 +443,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988739"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -463,8 +463,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988761"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -483,8 +483,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988783"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -503,8 +503,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988805"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -522,8 +522,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988833"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -541,8 +541,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988854"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -561,8 +561,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988871"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -581,8 +581,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.82,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988902"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -601,8 +601,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988925"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -622,8 +622,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988949"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -642,8 +642,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988967"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -662,8 +662,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.988992"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -681,8 +681,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989011"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -701,8 +701,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989030"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -722,8 +722,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.82,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989063"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -743,8 +743,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989087"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -763,8 +763,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989108"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -783,8 +783,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989139"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -802,8 +802,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989158"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -822,8 +822,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989176"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -841,8 +841,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989193"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -860,8 +860,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989208"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -880,8 +880,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989224"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.878442"
     },
     {
       "type": "citation_record",
@@ -900,8 +900,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989243"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -919,8 +919,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989262"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -939,8 +939,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989287"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -959,8 +959,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989307"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -979,8 +979,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989326"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -999,8 +999,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989348"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1019,8 +1019,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989369"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1039,8 +1039,8 @@
       "doi": "10.1038/s41551-018-0324-9",
       "discovery_method": "in_page_bibliography",
       "confidence": 0.98,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989393"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1059,8 +1059,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989420"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1078,8 +1078,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989446"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1097,8 +1097,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989467"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1118,8 +1118,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989490"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1137,8 +1137,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989510"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1157,8 +1157,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989537"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1177,8 +1177,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989557"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1197,8 +1197,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989577"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1217,8 +1217,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989599"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1237,8 +1237,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989619"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1257,8 +1257,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989641"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1276,8 +1276,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989662"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1295,8 +1295,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989680"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1315,8 +1315,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989698"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1335,8 +1335,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989718"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1355,8 +1355,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.82,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989748"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1374,8 +1374,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989768"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1394,8 +1394,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989794"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1415,8 +1415,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.82,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989822"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1435,8 +1435,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989845"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1456,8 +1456,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989869"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.879447"
     },
     {
       "type": "citation_record",
@@ -1477,8 +1477,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989893"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.880441"
     },
     {
       "type": "citation_record",
@@ -1498,8 +1498,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989937"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.880441"
     },
     {
       "type": "citation_record",
@@ -1519,8 +1519,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989960"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.880441"
     },
     {
       "type": "citation_record",
@@ -1539,8 +1539,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.989982"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.880441"
     },
     {
       "type": "citation_record",
@@ -1559,8 +1559,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.990000"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.880441"
     },
     {
       "type": "citation_record",
@@ -1579,8 +1579,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.990019"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.880441"
     },
     {
       "type": "citation_record",
@@ -1599,8 +1599,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.990041"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.880441"
     },
     {
       "type": "citation_record",
@@ -1620,8 +1620,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.990066"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.880441"
     },
     {
       "type": "citation_record",
@@ -1641,8 +1641,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.990093"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.880441"
     },
     {
       "type": "citation_record",
@@ -1660,8 +1660,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.8799999999999999,
-      "prompt_id": "df77978f-4c13-4356-8d54-b16ec100dba5",
-      "extracted_at": "2026-03-27T21:39:06.990112"
+      "prompt_id": "80afd4e9-6f74-4f7a-b1dd-e130e5a5dd8a",
+      "extracted_at": "2026-04-07T18:25:23.880441"
     }
   ]
 }

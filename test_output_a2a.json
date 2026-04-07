@@ -1,7 +1,7 @@
 {
   "schema": "citation_extraction",
   "version": "1.0",
-  "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
+  "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
   "model": "gemma3",
   "source_article": {
     "title": "Deep Learning and Neurology: A Systematic Review",
@@ -17,7 +17,7 @@
     "doi": "10.1007/s40120-019-00153-8"
   },
   "total_citations": 25,
-  "extraction_time_ms": 1,
+  "extraction_time_ms": 15,
   "citations": [
     {
       "type": "citation_record",
@@ -37,8 +37,8 @@
       "doi": "10.1038/nrg3208",
       "discovery_method": "in_page_bibliography",
       "confidence": 0.96,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803519"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -59,8 +59,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803616"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -80,8 +80,8 @@
       "doi": "10.1007/s10278-017-9976-3",
       "discovery_method": "in_page_bibliography",
       "confidence": 0.95,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803631"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -101,8 +101,8 @@
       "doi": "10.1109/TPAMI.2013.50",
       "discovery_method": "in_page_bibliography",
       "confidence": 0.97,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803639"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -122,8 +122,8 @@
       "doi": "10.1038/nature14539",
       "discovery_method": "in_page_bibliography",
       "confidence": 0.98,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803647"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -145,8 +145,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.9,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803654"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -165,8 +165,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.88,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803662"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -186,8 +186,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.91,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803669"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -205,8 +205,8 @@
       "doi": "10.1037/h0042519",
       "discovery_method": "in_page_bibliography",
       "confidence": 0.97,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803683"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -226,8 +226,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.96,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803690"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -250,8 +250,8 @@
       "doi": "10.1001/jama.2016.17216",
       "discovery_method": "in_page_bibliography",
       "confidence": 0.97,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803696"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -271,8 +271,8 @@
       "doi": "10.1038/nature21056",
       "discovery_method": "in_page_bibliography",
       "confidence": 0.97,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803704"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -292,8 +292,8 @@
       "doi": "10.1038/s41591-018-0107-6",
       "discovery_method": "in_page_bibliography",
       "confidence": 0.96,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803710"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -312,8 +312,8 @@
       "doi": "10.1126/science.1127647",
       "discovery_method": "in_page_bibliography",
       "confidence": 0.97,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803716"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -333,8 +333,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.95,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803723"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -354,8 +354,8 @@
       "doi": "10.1212/WNL.0b013e3181cb3e25",
       "discovery_method": "in_page_bibliography",
       "confidence": 0.95,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803729"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -375,8 +375,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.96,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803735"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -396,8 +396,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.95,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803741"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -417,8 +417,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803750"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -438,8 +438,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.95,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803757"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -459,8 +459,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.93,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803762"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -483,8 +483,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.95,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803768"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -504,8 +504,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803788"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -525,8 +525,8 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.94,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803799"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     },
     {
       "type": "citation_record",
@@ -549,9 +549,9 @@
       "doi": null,
       "discovery_method": "in_page_bibliography",
       "confidence": 0.93,
-      "prompt_id": "d99ced37-f146-4fbe-954c-5efd0470355d",
-      "extracted_at": "2026-03-26T22:52:34.803808"
+      "prompt_id": "4bab4083-3480-4a01-9570-61a349fa8b39",
+      "extracted_at": "2026-04-07T18:25:47.859464"
     }
   ],
-  "timestamp": "2026-03-26T22:52:34.804161"
+  "timestamp": "2026-04-07T18:25:47.859464"
 }

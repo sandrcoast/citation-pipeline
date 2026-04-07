@@ -16,12 +16,20 @@ real deployment, Gemma 3 does this parsing — the output schema is identical.
 import hashlib
 import hmac
 import json
+import os
 import re
+import sys
 import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
+
+# Ensure UTF-8 output on Windows (box-drawing characters, etc.)
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 # ── CitationRecord (same as core/models.py, stdlib-only) ─────────────────
@@ -466,9 +474,9 @@ def main():
     print(f"{'═' * 70}")
 
     # Write outputs
-    with open("/home/claude/citation-pipeline/test_full_a2a.json", "w") as f:
+    with open(os.path.join(_PROJECT_ROOT, "test_full_a2a.json"), "w") as f:
         json.dump(a2a, f, indent=2, default=str)
-    with open("/home/claude/citation-pipeline/test_full_user.json", "w") as f:
+    with open(os.path.join(_PROJECT_ROOT, "test_full_user.json"), "w") as f:
         json.dump({"citations": [r.to_user_view() for r in unique]}, f, indent=2)
 
     print(f"\n  Outputs: test_full_a2a.json, test_full_user.json")

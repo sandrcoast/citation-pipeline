@@ -64,12 +64,15 @@ your chosen model in `config.py`:
 
 ```
 FROM gemma3:1b
+Hint: Default folder for Ollama models in Windows 11:
+C:\Users\<Username>\.ollama
 ```
 
 Then build:
 
 ```bash
-ollama create gemma3-1b-cite -f ollama_patch/Modelfile
+ollama create gemma3-1b-cite -f ollama_patch/Modelfile 
+
 ```
 
 > **Note on naming:** The cite model name is auto-derived in `config.py` as

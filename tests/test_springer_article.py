@@ -16,12 +16,20 @@ run through the REAL pipeline code.
 import hashlib
 import hmac
 import json
+import os
+import re
+import sys
 import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
-import re
+
+# Ensure UTF-8 output on Windows (box-drawing characters, etc.)
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 # ── Reuse the exact data model from core/models (stdlib mirror) ──────────
@@ -614,11 +622,11 @@ def run_pipeline():
     print("═" * 70)
 
     # Write full outputs to files
-    with open("/home/claude/citation-pipeline/test_output_a2a.json", "w") as f:
+    with open(os.path.join(_PROJECT_ROOT, "test_output_a2a.json"), "w") as f:
         json.dump(a2a_envelope, f, indent=2, default=str)
-    with open("/home/claude/citation-pipeline/test_output_user.json", "w") as f:
+    with open(os.path.join(_PROJECT_ROOT, "test_output_user.json"), "w") as f:
         json.dump({"prompt_id": prompt_id, "citations": [r.to_user_view() for r in unique]}, f, indent=2)
-    with open("/home/claude/citation-pipeline/test_output_vector.json", "w") as f:
+    with open(os.path.join(_PROJECT_ROOT, "test_output_vector.json"), "w") as f:
         json.dump([r.to_vector_meta() for r in unique], f, indent=2)
 
     print("\n  Full outputs written to:")
