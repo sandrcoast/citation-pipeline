@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python tests/test_full_83refs.py)",
+      "Bash(python \"c:/Code/citation-pipeline/tests/test_full_83refs.py\")",
+      "Bash(python \"c:/Code/citation-pipeline/tests/test_springer_article.py\")",
+      "Bash(python -c \"import sys; sys.path.insert\\(0, ''c:/Code/citation-pipeline''\\); from config import cfg; print\\(cfg.CHROMA_PERSIST_DIR\\)\")",
+      "Bash(python \"c:/Code/citation-pipeline/tests/test_pipeline.py\")",
+      "Bash(python -c \"import sys; sys.path.insert\\(0,''.''\\);  import middleware.proxy; print\\(''OK''\\)\")"
+    ]
+  }
+}
