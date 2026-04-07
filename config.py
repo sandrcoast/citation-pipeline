@@ -21,6 +21,9 @@ Usage:
 """
 
 import os
+from pathlib import Path
+
+_HERE = Path(__file__).parent
 
 
 def _env(key: str, default: str) -> str:
@@ -117,7 +120,7 @@ class Config:
 
     # ── Storage — Vector DB ───────────────────────────────────────────
     # ChromaDB (default, embedded — zero config)
-    CHROMA_PERSIST_DIR: str = _env("CHROMA_PERSIST_DIR", "./data/chromadb")
+    CHROMA_PERSIST_DIR: str = _env("CHROMA_PERSIST_DIR", str(_HERE / "data" / "chromadb"))
     CHROMA_COLLECTION: str = _env("CHROMA_COLLECTION", "citations")
 
     # Qdrant (alternative — set USE_QDRANT=true to switch)

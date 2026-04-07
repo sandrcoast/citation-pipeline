@@ -277,7 +277,7 @@ def parse_vancouver_ref(ref_text: str) -> Optional[dict]:
 # ── Full PDF text (from web_fetch) ───────────────────────────────────────
 # In the real pipeline, pdfplumber extracts this. We have it from web_fetch.
 
-PDF_TEXT = open('/dev/stdin', 'r').read() if False else """REFERENCES
+PDF_TEXT = """REFERENCES
 1. Jensen PB, Jensen LJ, Brunak S. Mining electronic health records: towards better research applications and clinical care. Nat Rev Genet. 2012;13(6):395-405.
 2. Luo J, Wu M, Gopukumar D, Zhao Y. Big data application in biomedical research and health care: a literature review. Biomed Inform Insights. 2016;19(8):1-10.
 3. Kohli MD, Summers RM, Geis JR. Medical image data and datasets in the era of machine learning-whitepaper from the 2016 C-MIMI meeting dataset session. J Digit Imaging. 2017;30(4):392-9.
