@@ -20,11 +20,18 @@ saved to `results/` for later inspection.
   `temperature=0.0`. The system prompt requires the model to cite its
   training-knowledge sources for factual answers even when the prompt
   contains no URLs.
-- **Server-side URL fetch** — URLs found in the prompt are fetched before the
-  LLM call. Static pages use aiohttp; JS-rendered pages (arXiv, Nature,
-  Springer) fall back to headless Chromium via Playwright. The fetched text is
-  injected as a `<fetched_sources>` block so the model cites real, retrieved
-  content.
+- **Server-side URL fetch (context only)** — URLs found in the prompt are
+  fetched before the LLM call. Static pages use aiohttp; JS-rendered pages
+  (arXiv, Nature, Springer) fall back to headless Chromium via Playwright. The
+  fetched text is injected as a `<fetched_sources>` block. The middleware does
+  **not** scrape page metadata or bibliographies into citation records — the
+  fetch only provides the LLM with ground-truth content to read and cite.
+- **LLM is the sole citation author** — every entry in `citation_records`
+  comes from the model's output. The middleware never synthesizes a record
+  from HTML, `<meta>` tags, or scraped bibliographies. This preserves A2A
+  purity: the next agent in a chain reproduces the same contract purely by
+  being prompted the same way, with no dependency on this middleware's
+  HTML-parsing knowledge.
 - **Inline source deduplication** — each citation is assigned a stable
   `source_id` (DOI → normalised URL → title+authors hash) and checked against
   ChromaDB in the same request. New sources are inserted and `source_cached`
@@ -65,11 +72,10 @@ sequenceDiagram
 
     User->>MW: POST /api/generate (prompt, citations=true)
     MW->>Web: fetch URLs in prompt
-    Web-->>MW: page text + structured metadata
-    MW->>MW: build CitationRecords from metadata
-    MW->>Ollama: enriched prompt (fetched text injected)
-    Ollama-->>MW: answer + references JSON
-    MW->>MW: parse and merge citation records
+    Web-->>MW: cleaned page text
+    MW->>Ollama: enriched prompt (fetched text injected as <fetched_sources>)
+    Ollama-->>MW: answer + references JSON (LLM is the sole producer)
+    MW->>MW: parse LLM references block (resilient: marker variants + URL fallback)
     MW->>Chroma: cache lookup by source_id
     Chroma-->>MW: known source_ids
     MW->>Chroma: upsert new sources + citations

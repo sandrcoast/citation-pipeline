@@ -74,7 +74,7 @@ curl http://localhost:8000/api/generate -H "Content-Type: application/json" -d "
 ```
 
 The middleware fetches the URL before the LLM call. The response includes a
-`_fetched_sources` debug key showing what was fetched (url, status, chars, refs_found).
+`_fetched_sources` debug key showing what was fetched (url, status, chars, via_playwright).
 Set `WEB_FETCH_ENABLED=false` to disable fetching and restore pass-through behaviour.
 
 ### Retrieve by prompt ID
@@ -197,24 +197,24 @@ first (Step 5), then launch the REPL in another terminal.
 ## What happens under the hood (citations=true)
 
 1. Middleware extracts any URLs from the prompt and fetches them (aiohttp fast
-   path; Playwright fallback for JS-rendered pages like Nature/Springer).
-2. Structured metadata (title, authors, DOI, reference list) is extracted from
-   each fetched page and turned into `CitationRecord` objects directly.
-3. Fetched page text is injected into the prompt as a `<fetched_sources>` block
-   so the LLM can cite real content.
-4. Middleware makes **one** call to Ollama with the enriched prompt, asking for
-   `<answer>---REFERENCES---<JSON array>`.
-5. Splits the response at the `---REFERENCES---` marker. If the model used a
-   non-standard header, the parser tries common variants before falling back to
-   URL extraction from the references section.
-6. Parses the JSON array into `CitationRecord` objects; merges with records
-   built from fetched page metadata (deduped by content hash).
-7. For each record, computes `source_id` (doi → url → title+authors hash).
-8. Looks up `source_id`s in the ChromaDB `sources` collection. Marks existing
+   path; Playwright fallback for JS-rendered or sparse-body pages).
+2. Cleaned page text is injected into the prompt as a `<fetched_sources>`
+   block. The middleware does **not** build records from HTML — that's the
+   LLM's job. The fetch only provides ground-truth content for the model to
+   read and cite.
+3. Middleware makes **one** call to Ollama with the enriched prompt, asking
+   for `<answer>---REFERENCES---<JSON array>`.
+4. Splits the response at the `---REFERENCES---` marker. If the model used a
+   non-standard header, the parser tries common variants before falling back
+   to URL extraction from the references section.
+5. Parses the JSON array into `CitationRecord` objects. Every record comes
+   from the LLM's output — there is no client-side synthesis path.
+6. For each record, computes `source_id` (doi → url → title+authors hash).
+7. Looks up `source_id`s in the ChromaDB `sources` collection. Marks existing
    ones as `source_cached=true`; inserts new ones.
-9. Upserts all records into the ChromaDB `citations` collection.
-10. Returns the response with `citation_records_count`, `citation_metadata`,
-    `citation_user`, and `_fetched_sources` attached.
+8. Upserts all records into the ChromaDB `citations` collection.
+9. Returns the response with `citation_records_count`, `citation_metadata`,
+   `citation_user`, and `_fetched_sources` attached.
 
 All of that is inline — no background tasks. The response you receive is
 guaranteed to match what's in ChromaDB.

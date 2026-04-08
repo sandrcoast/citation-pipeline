@@ -46,12 +46,22 @@ When adding fields:
 - `get_by_prompt(prompt_id)` — retrieve by prompt
 - `semantic_search(query, limit)` — full-text search over stored citations
 
+## Architectural Invariants
+
+- **The LLM is the sole producer of `citation_records`.** Middleware fetches,
+  enriches the prompt, parses the LLM's output, and stores the result. It
+  never synthesizes a `CitationRecord` from scraped HTML, page metadata, or
+  any other non-LLM source. This is what makes the pipeline A2A-compatible:
+  the next agent in a chain reproduces the same behaviour purely by being
+  prompted the same way.
+- **Single-pass LLM calls only** — `temperature=0.0`, no retry loops, no
+  multi-pass extraction.
+
 ## Code Style
 
 - Python 3.10+, type hints throughout
 - Async-first — use `async def` for all I/O
 - Pydantic models for data, dataclasses for configuration
-- Single-pass LLM calls only — `temperature=0.0`, no retry loops
 
 ## Reporting Issues
 

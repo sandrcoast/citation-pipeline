@@ -32,7 +32,6 @@ from pydantic import BaseModel, Field
 from config import cfg
 from core.extractor import CitationExtractor, ExtractorConfig
 from core.models import PromptCitationResult
-from core.models import CitationRecord, DiscoveryMethod, SourceType
 from core.web_fetch import FetchedPage, extract_urls, fetch_all
 from storage.store import CitationStore, StoreConfig
 
@@ -192,9 +191,6 @@ async def _run_citation_flow(
     answer, records = await extractor.generate_with_citations(
         query, prompt_id, fetched_pages=fetched
     )
-    fetched_records = _citations_from_fetched(fetched, prompt_id)
-    existing_cids = {r.cid for r in records}
-    records += [r for r in fetched_records if r.cid not in existing_cids]
     records = store.reconcile_sources(records, prompt_id)
     elapsed = int((time.monotonic() - start) * 1000)
     result = PromptCitationResult(
@@ -209,64 +205,6 @@ async def _run_citation_flow(
 
 
 # ── Web fetch helpers ─────────────────────────────────────────────────────
-
-def _citations_from_fetched(pages: list[FetchedPage], prompt_id: str) -> list[CitationRecord]:
-    """
-    Build CitationRecord objects from structured page metadata.
-
-    Two sources per page:
-    1. Article-level meta (window.dataLayer / citation_* tags) → one record
-       for the article itself.
-    2. meta["references"] list → one record per entry in the article's own
-       bibliography (raw citation text + DOI when available).
-    """
-    records: list[CitationRecord] = []
-
-    for page in pages:
-        meta = page.meta or {}
-
-        # ── Article-level record ──────────────────────────────────────
-        if meta.get("title"):
-            authors = meta.get("authors") or []
-            if isinstance(authors, str):
-                authors = [authors]
-            try:
-                st = SourceType(meta["source_type"]) if meta.get("source_type") else SourceType.UNKNOWN
-            except ValueError:
-                st = SourceType.UNKNOWN
-            records.append(CitationRecord(
-                title=meta["title"],
-                authors=authors,
-                doi=meta.get("doi"),
-                access_url=page.final_url or page.url,
-                publisher=meta.get("publisher"),
-                date_published=meta.get("date_published"),
-                source_type=st,
-                discovery_method=DiscoveryMethod.USER_PROVIDED,
-                confidence=0.95,
-                prompt_id=prompt_id,
-            ))
-
-        # ── Reference-list records ────────────────────────────────────
-        for ref in meta.get("references", []):
-            raw = ref.get("raw", "").strip()
-            if not raw:
-                continue
-            doi = ref.get("doi") or None
-            records.append(CitationRecord(
-                title=raw[:300],
-                authors=[],
-                doi=doi,
-                access_url=f"https://doi.org/{doi}" if doi else None,
-                raw_citation_fragment=raw[:500],
-                source_type=SourceType.JOURNAL_ARTICLE,
-                discovery_method=DiscoveryMethod.USER_PROVIDED,
-                confidence=0.85,
-                prompt_id=prompt_id,
-            ))
-
-    return records
-
 
 async def _maybe_fetch(text: str) -> list[FetchedPage]:
     if not cfg.WEB_FETCH_ENABLED:
@@ -287,7 +225,6 @@ def _fetched_summary(pages: list[FetchedPage]) -> list[dict]:
             "title": p.title,
             "chars": len(p.text),
             "via_playwright": p.via_playwright,
-            "refs_found": len((p.meta or {}).get("references", [])),
             "error": p.error,
         }
         for p in pages
