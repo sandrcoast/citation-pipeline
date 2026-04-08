@@ -32,6 +32,8 @@ from pydantic import BaseModel, Field
 from config import cfg
 from core.extractor import CitationExtractor, ExtractorConfig
 from core.models import PromptCitationResult
+from core.models import CitationRecord, DiscoveryMethod, SourceType
+from core.web_fetch import FetchedPage, extract_urls, fetch_all
 from storage.store import CitationStore, StoreConfig
 
 logger = logging.getLogger(__name__)
@@ -103,31 +105,15 @@ async def generate(request: GenerateRequest):
         forwarded["_prompt_id"] = prompt_id
         return json_utf8(forwarded)
 
-    # Single-call extraction
-    answer, records = await extractor.generate_with_citations(
-        request.prompt, prompt_id
+    answer, result, elapsed, fetched_sum = await _run_citation_flow(
+        request.prompt, prompt_id, request.model, start
     )
-
-    # Reconcile sources against global cache + insert new (inline)
-    records = store.reconcile_sources(records, prompt_id)
-
-    elapsed = int((time.monotonic() - start) * 1000)
-    result = PromptCitationResult(
-        prompt_id=prompt_id,
-        user_query=request.prompt,
-        model=request.model,
-        citations=records,
-        extraction_time_ms=elapsed,
-    )
-
-    # Store citations inline — response reflects what's in the DB
-    store.store_prompt_result(result)
-
     return json_utf8({
         "model": request.model,
         "response": answer,
         "_prompt_id": prompt_id,
         "_total_ms": elapsed,
+        "_fetched_sources": fetched_sum,
         "citation_metadata": result.to_a2a_envelope(),
         "citation_user": result.to_user_response(),
     })
@@ -150,24 +136,15 @@ async def chat(request: ChatRequest):
     user_msgs = [m for m in request.messages if m.get("role") == "user"]
     query = user_msgs[-1]["content"] if user_msgs else ""
 
-    answer, records = await extractor.generate_with_citations(query, prompt_id)
-    records = store.reconcile_sources(records, prompt_id)
-
-    elapsed = int((time.monotonic() - start) * 1000)
-    result = PromptCitationResult(
-        prompt_id=prompt_id,
-        user_query=query,
-        model=request.model,
-        citations=records,
-        extraction_time_ms=elapsed,
+    answer, result, elapsed, fetched_sum = await _run_citation_flow(
+        query, prompt_id, request.model, start
     )
-    store.store_prompt_result(result)
-
     return json_utf8({
         "model": request.model,
         "message": {"role": "assistant", "content": answer},
         "_prompt_id": prompt_id,
         "_total_ms": elapsed,
+        "_fetched_sources": fetched_sum,
         "citation_metadata": result.to_a2a_envelope(),
         "citation_user": result.to_user_response(),
     })
@@ -195,6 +172,124 @@ async def health():
         "ollama": "connected" if ollama_ok else "unreachable",
         "store": store.status() if store else "not_initialized",
     }
+
+
+# ── Shared citation flow ──────────────────────────────────────────────────
+
+async def _run_citation_flow(
+    query: str,
+    prompt_id: str,
+    model: str,
+    start: float,
+) -> tuple[str, PromptCitationResult, int, list[dict]]:
+    """
+    Shared citation-extraction pipeline used by both /api/generate and /api/chat.
+    Returns (answer, result, elapsed_ms, fetched_summary).
+    """
+    fetched = await _maybe_fetch(query)
+    answer, records = await extractor.generate_with_citations(
+        query, prompt_id, fetched_pages=fetched
+    )
+    fetched_records = _citations_from_fetched(fetched, prompt_id)
+    existing_cids = {r.cid for r in records}
+    records += [r for r in fetched_records if r.cid not in existing_cids]
+    records = store.reconcile_sources(records, prompt_id)
+    elapsed = int((time.monotonic() - start) * 1000)
+    result = PromptCitationResult(
+        prompt_id=prompt_id,
+        user_query=query,
+        model=model,
+        citations=records,
+        extraction_time_ms=elapsed,
+    )
+    store.store_prompt_result(result)
+    return answer, result, elapsed, _fetched_summary(fetched)
+
+
+# ── Web fetch helpers ─────────────────────────────────────────────────────
+
+def _citations_from_fetched(pages: list[FetchedPage], prompt_id: str) -> list[CitationRecord]:
+    """
+    Build CitationRecord objects from structured page metadata.
+
+    Two sources per page:
+    1. Article-level meta (window.dataLayer / citation_* tags) → one record
+       for the article itself.
+    2. meta["references"] list → one record per entry in the article's own
+       bibliography (raw citation text + DOI when available).
+    """
+    records: list[CitationRecord] = []
+
+    for page in pages:
+        meta = page.meta or {}
+
+        # ── Article-level record ──────────────────────────────────────
+        if meta.get("title"):
+            authors = meta.get("authors") or []
+            if isinstance(authors, str):
+                authors = [authors]
+            try:
+                st = SourceType(meta["source_type"]) if meta.get("source_type") else SourceType.UNKNOWN
+            except ValueError:
+                st = SourceType.UNKNOWN
+            records.append(CitationRecord(
+                title=meta["title"],
+                authors=authors,
+                doi=meta.get("doi"),
+                access_url=page.final_url or page.url,
+                publisher=meta.get("publisher"),
+                date_published=meta.get("date_published"),
+                source_type=st,
+                discovery_method=DiscoveryMethod.USER_PROVIDED,
+                confidence=0.95,
+                prompt_id=prompt_id,
+            ))
+
+        # ── Reference-list records ────────────────────────────────────
+        for ref in meta.get("references", []):
+            raw = ref.get("raw", "").strip()
+            if not raw:
+                continue
+            doi = ref.get("doi") or None
+            records.append(CitationRecord(
+                title=raw[:300],
+                authors=[],
+                doi=doi,
+                access_url=f"https://doi.org/{doi}" if doi else None,
+                raw_citation_fragment=raw[:500],
+                source_type=SourceType.JOURNAL_ARTICLE,
+                discovery_method=DiscoveryMethod.USER_PROVIDED,
+                confidence=0.85,
+                prompt_id=prompt_id,
+            ))
+
+    return records
+
+
+async def _maybe_fetch(text: str) -> list[FetchedPage]:
+    if not cfg.WEB_FETCH_ENABLED:
+        return []
+    urls = extract_urls(text)
+    if not urls:
+        return []
+    logger.info(f"Fetching {len(urls)} URL(s) from prompt")
+    return await fetch_all(urls)
+
+
+def _fetched_summary(pages: list[FetchedPage]) -> list[dict]:
+    return [
+        {
+            "url": p.url,
+            "final_url": p.final_url,
+            "status": p.status,
+            "title": p.title,
+            "chars": len(p.text),
+            "via_playwright": p.via_playwright,
+            "refs_found": len((p.meta or {}).get("references", [])),
+            "error": p.error,
+        }
+        for p in pages
+    ]
 
 
 # ── Ollama helpers (transparent proxy path) ───────────────────────────────

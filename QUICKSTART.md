@@ -31,9 +31,12 @@ If the model is missing: `ollama pull gemma3:1b`.
 
 ```bash
 pip install -r requirements.txt
+playwright install chromium
 ```
 
-Five packages: fastapi, uvicorn, pydantic, aiohttp, chromadb.
+Core packages: fastapi, uvicorn, pydantic, aiohttp, chromadb, playwright.
+The `playwright install chromium` step downloads the Chromium browser used as a
+fallback for JS-rendered pages (e.g. Nature, Springer). Only needed once per environment.
 
 ## Step 5: Start the middleware
 
@@ -63,6 +66,16 @@ curl http://localhost:8000/api/generate -H "Content-Type: application/json" -d "
 The response includes `citation_metadata` (A2A envelope) and `citation_user`
 (clean list). Each citation carries `source_id` and `source_cached` so you
 can tell fresh extractions from cache hits.
+
+### With a URL in the prompt (web fetch)
+
+```bash
+curl http://localhost:8000/api/generate -H "Content-Type: application/json" -d "{\"model\":\"gemma3:1b\",\"prompt\":\"Summarize https://www.nature.com/articles/s41598-026-39523-2 and cite it.\",\"citations\":true}"
+```
+
+The middleware fetches the URL before the LLM call. The response includes a
+`_fetched_sources` debug key showing what was fetched (url, status, chars, refs_found).
+Set `WEB_FETCH_ENABLED=false` to disable fetching and restore pass-through behaviour.
 
 ### Retrieve by prompt ID
 
@@ -114,15 +127,23 @@ Both commands run against the embedded ChromaDB at `./data/chromadb/` — no ser
 
 ## What happens under the hood (citations=true)
 
-1. Middleware makes **one** call to Ollama with a system prompt asking for
+1. Middleware extracts any URLs from the prompt and fetches them (aiohttp fast path;
+   Playwright fallback for JS-rendered pages like Nature/Springer).
+2. Structured metadata (title, authors, DOI, reference list) is extracted from each
+   fetched page and turned into `CitationRecord` objects directly.
+3. Fetched page text is injected into the prompt as a `<fetched_sources>` block so
+   the LLM can cite real content.
+4. Middleware makes **one** call to Ollama with the enriched prompt, asking for
    `<answer>---REFERENCES---<JSON array>`.
-2. Splits the response at the `---REFERENCES---` marker.
-3. Parses the JSON array into `CitationRecord` objects (filters out stubs).
-4. For each record, computes `source_id` (doi → url → title+authors hash).
-5. Looks up `source_id`s in the ChromaDB `sources` collection. Marks
+5. Splits the response at the `---REFERENCES---` marker.
+6. Parses the JSON array into `CitationRecord` objects (filters out stubs); merges
+   with records built from fetched page metadata (deduped by content hash).
+7. For each record, computes `source_id` (doi → url → title+authors hash).
+8. Looks up `source_id`s in the ChromaDB `sources` collection. Marks
    existing ones as `source_cached=true`; inserts new ones.
-6. Upserts all records into the ChromaDB `citations` collection.
-7. Returns the response with `citation_metadata` and `citation_user` attached.
+9. Upserts all records into the ChromaDB `citations` collection.
+10. Returns the response with `citation_metadata`, `citation_user`, and
+    `_fetched_sources` attached.
 
 All of that is inline — no background tasks. The response you receive is
 guaranteed to match what's in ChromaDB.
@@ -142,7 +163,12 @@ Everything in [config.py](config.py), overridable via env vars:
 | `CHROMA_PERSIST_DIR` | `./data/chromadb` | ChromaDB location |
 | `CHROMA_SOURCES_COLLECTION` | `sources` | Source dedup collection |
 | `CHROMA_CITATIONS_COLLECTION` | `citations` | Per-prompt records collection |
-| `MIDDLEWARE_PORT` | `8000` | HTTP port |
+| `WEB_FETCH_ENABLED` | `true` | Enable/disable URL pre-fetching |
+| `WEB_FETCH_TIMEOUT_S` | `15` | Per-URL fetch timeout (seconds) |
+| `WEB_FETCH_MAX_URLS` | `3` | Max URLs fetched per prompt |
+| `WEB_FETCH_MAX_BYTES` | `2000000` | Max response size per URL (bytes) |
+| `WEB_FETCH_MAX_CHARS_PER_PAGE` | `60000` | Max extracted text per page (chars) |
+| `WEB_FETCH_CONCURRENCY` | `3` | Parallel fetch limit |
 
 ## Gemma 3:1b token limits
 
@@ -173,7 +199,8 @@ citation-pipeline/
 ├── config.py                 ← all settings
 ├── core/
 │   ├── extractor.py          ← single Ollama call + output parser
-│   └── models.py             ← CitationRecord, Source, A2A views
+│   ├── models.py             ← CitationRecord, Source, A2A views
+│   └── web_fetch.py          ← URL fetcher, HTML→text, Playwright fallback
 ├── middleware/proxy.py       ← FastAPI entry point + reconcile flow
 └── storage/store.py          ← ChromaDB two-collection store
 ```

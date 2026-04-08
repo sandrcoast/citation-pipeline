@@ -19,5 +19,8 @@ aiohttp>=3.10.0
 # Vector storage (embedded, zero-config)
 chromadb>=0.5.0
 
-# Testing
+# JS-rendered page fetching (fallback for sites like Nature)
+playwright>=1.44.0
+
+# Testing (dev dependency — no tests directory currently)
 pytest>=8.3.0

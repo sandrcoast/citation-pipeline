@@ -20,9 +20,10 @@ uvicorn middleware.proxy:app --host 0.0.0.0 --port 8000
 
 ## Project Structure
 
-- `config.py` — All settings. Single source of truth for Ollama + ChromaDB config.
+- `config.py` — All settings. Single source of truth for Ollama + ChromaDB + web-fetch config.
 - `core/models.py` — Data models. Change the schema here; all views update automatically.
 - `core/extractor.py` — Single-call Ollama extractor + output parser.
+- `core/web_fetch.py` — URL fetcher (aiohttp + Playwright fallback), HTML→text, structured metadata extraction.
 - `middleware/proxy.py` — FastAPI entry point + inline reconcile flow.
 - `storage/store.py` — ChromaDB two-collection store (sources + citations).
 

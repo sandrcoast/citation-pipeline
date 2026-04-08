@@ -11,7 +11,10 @@ sources against a ChromaDB cache before returning the response.
 ## Design principles
 
 - **LLM is the source of truth** for which references were used.
-  No web scraping, no PDF parsing, no regex bibliography detection.
+  No PDF parsing, no regex bibliography detection.
+- **Server-side web fetch** — URLs in the prompt are fetched before the LLM call
+  and injected as `<fetched_sources>` context. Static pages use aiohttp; JS-rendered
+  pages fall back to Playwright (Chromium, headless). The model cites real content.
 - **Single Ollama call** per user prompt. One pass, `temperature=0.0`.
 
 - **ChromaDB as cache**, not vector search. `source_id` lookup is `collection.get()` — O(1), no embeddings on the hot path.
@@ -44,18 +47,22 @@ sources against a ChromaDB cache before returning the response.
 sequenceDiagram
     actor User
     participant MW as Middleware
+    participant Web as Web (aiohttp/Playwright)
     participant Ollama
     participant Chroma as ChromaDB
 
     User->>MW: POST /api/generate {prompt, citations:true}
-    MW->>Ollama: generate (answer + ---REFERENCES--- + JSON)
+    MW->>Web: fetch URLs found in prompt (if any)
+    Web-->>MW: FetchedPage[] (title, text, meta, references)
+    MW->>MW: build CitationRecords from page metadata
+    MW->>Ollama: generate enriched prompt (answer + ---REFERENCES--- + JSON)
     Ollama-->>MW: raw text
-    MW->>MW: split output, parse refs → CitationRecord[]
+    MW->>MW: split output, parse refs → CitationRecord[]; merge with fetched records
     MW->>Chroma: get(ids=[source_ids]) — cache lookup
     Chroma-->>MW: existing source_ids
     MW->>Chroma: upsert new sources
     MW->>Chroma: upsert citations (per-prompt)
-    MW-->>User: {response, citation_metadata, citation_user}
+    MW-->>User: {response, citation_metadata, citation_user, _fetched_sources}
 ```
 
 ## Data model
@@ -110,6 +117,7 @@ Response shape:
     "schema": "citation_extraction",
     "version": "1.0",
     "prompt_id": "a1b2c3d4-...",
+    "user_query": "What is attention in neural networks?",
     "total_citations": 1,
     "citations": [
       {
@@ -172,13 +180,14 @@ default to `[]` — graceful degradation.
 
 ```
 citation-pipeline/
-├── config.py                 Ollama + ChromaDB settings (single source of truth)
+├── config.py                 Ollama + ChromaDB + web-fetch settings (single source of truth)
 ├── core/
 │   ├── models.py             CitationRecord, Source, compute_source_id, A2A views
-│   └── extractor.py          Single-call Ollama extractor + output parser
+│   ├── extractor.py          Single-call Ollama extractor + output parser
+│   └── web_fetch.py          URL fetcher (aiohttp + Playwright), HTML→text, metadata extraction
 ├── middleware/
 │   └── proxy.py              FastAPI endpoints + inline reconcile flow
 ├── storage/
 │   └── store.py              ChromaDB store with two collections + reconcile
-└── requirements.txt          fastapi, uvicorn, aiohttp, chromadb, pydantic
+└── requirements.txt          fastapi, uvicorn, aiohttp, chromadb, pydantic, playwright
 ```

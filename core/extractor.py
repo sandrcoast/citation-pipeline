@@ -35,6 +35,7 @@ from core.models import (
     DiscoveryMethod,
     SourceType,
 )
+from core.web_fetch import FetchedPage
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +69,13 @@ Rules:
 - The marker {REFERENCES_MARKER} must appear EXACTLY ONCE, after the full answer.
 - The references block must be a JSON array. No prose, no markdown fences.
 - If you used no external sources, output an empty array: []
-- Do not invent sources. If unsure, omit or mark confidence low."""
+- Do not invent sources. If unsure, omit or mark confidence low.
+- If the user message contains a <fetched_sources> block, treat those pages as
+  AUTHORITATIVE ground truth. Base your answer on their TEXT, and cite them in
+  the references block using their exact URL as the "url" field and the real
+  TITLE from the page. Prefer fetched sources over training knowledge when they
+  conflict. If a fetched source has [fetch failed: ...] instead of TEXT, do not
+  invent content for it."""
 
 
 @dataclass
@@ -92,18 +99,49 @@ class CitationExtractor:
         self,
         user_prompt: str,
         prompt_id: str,
+        fetched_pages: Optional[list[FetchedPage]] = None,
     ) -> tuple[str, list[CitationRecord]]:
         """
         Single Ollama call. Returns (answer_text, citation_records).
         Records have empty source_id — populated later by store.reconcile_sources.
+
+        If fetched_pages is provided, their content is injected into the prompt
+        as a <fetched_sources> block for the model to cite authoritatively.
         """
-        raw = await self._call_ollama(user_prompt)
+        enriched = self._build_enriched_prompt(user_prompt, fetched_pages)
+        raw = await self._call_ollama(enriched)
         if not raw:
             return ("", [])
 
         answer, refs_json = self._split_output(raw)
         records = self._parse_references(refs_json, prompt_id)
         return (answer, records)
+
+    # ── Prompt enrichment ─────────────────────────────────────────────
+
+    @staticmethod
+    def _build_enriched_prompt(
+        user_prompt: str, fetched_pages: Optional[list[FetchedPage]]
+    ) -> str:
+        if not fetched_pages:
+            return user_prompt
+        lines: list[str] = ["<fetched_sources>"]
+        for i, page in enumerate(fetched_pages, start=1):
+            lines.append(f"[{i}] URL: {page.final_url or page.url}")
+            if page.title:
+                lines.append(f"    TITLE: {page.title}")
+            if page.ok:
+                lines.append("    TEXT:")
+                for ln in page.text.splitlines():
+                    lines.append(f"    {ln}")
+            else:
+                lines.append(f"    [fetch failed: {page.failure_reason}]")
+            lines.append("")
+        lines.append("</fetched_sources>")
+        lines.append("")
+        lines.append("USER QUESTION:")
+        lines.append(user_prompt)
+        return "\n".join(lines)
 
     # ── Ollama call ───────────────────────────────────────────────────
 

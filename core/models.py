@@ -223,6 +223,7 @@ class PromptCitationResult(BaseModel):
             "schema": "citation_extraction",
             "version": "1.0",
             "prompt_id": self.prompt_id,
+            "user_query": self.user_query,
             "model": self.model,
             "total_citations": len(self.citations),
             "extraction_time_ms": self.extraction_time_ms,
