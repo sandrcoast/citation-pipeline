@@ -144,12 +144,23 @@ def send_prompt(prompt: str, model: str, citations: bool, base_url: str) -> None
         print(json.dumps(parsed, ensure_ascii=False, indent=2))
         return
 
+    # Pull the LLM answer out of the JSON for a clean text-first display.
+    answer_text = ""
+    if isinstance(parsed.get("response"), str):
+        answer_text = parsed["response"]
+    elif isinstance(parsed.get("message"), dict):
+        answer_text = parsed["message"].get("content", "") or ""
+
+    print("--- LLM answer ---")
+    print(answer_text.strip() or "[empty answer — model returned no text]")
+    print()
+
     summary_keys = (
-        "model", "response", "message",
-        "_prompt_id", "_total_ms", "citation_records_count",
-        "_fetched_sources",
+        "model", "_prompt_id", "_total_ms",
+        "citation_records_count", "_fetched_sources",
     )
     summary = {k: parsed[k] for k in summary_keys if k in parsed}
+    print("--- response metadata ---")
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 
     citations = []
@@ -157,7 +168,10 @@ def send_prompt(prompt: str, model: str, citations: bool, base_url: str) -> None
     if isinstance(meta, dict):
         citations = meta.get("citations") or []
     print("\n--- first 3 citation records ---")
-    print(json.dumps(citations[:3], ensure_ascii=False, indent=2))
+    if not citations:
+        print("[no citation records returned for this prompt]")
+    else:
+        print(json.dumps(citations[:3], ensure_ascii=False, indent=2))
 
     try:
         path = _save_full_response(prompt, parsed)

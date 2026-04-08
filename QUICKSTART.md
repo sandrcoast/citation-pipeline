@@ -150,9 +150,12 @@ Type /help for shortcuts.
 
 $ curl -s -X POST http://localhost:8000/api/generate -H ... -d '{...}'
 
+--- LLM answer ---
+<the model's prose answer, printed as a clean text block>
+
+--- response metadata ---
 {
   "model": "gemma3:1b",
-  "response": "...",
   "_prompt_id": "...",
   "_total_ms": 4077,
   "citation_records_count": 12,
@@ -161,6 +164,9 @@ $ curl -s -X POST http://localhost:8000/api/generate -H ... -d '{...}'
 
 --- first 3 citation records ---
 [ {...}, {...}, {...} ]
+
+(or, when the array is empty:)
+[no citation records returned for this prompt]
 
 Full collection of citation records is available in following file in results/260408_201500_arxiv.orghtml25.json
 ```
