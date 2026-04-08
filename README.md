@@ -186,14 +186,3 @@ citation-pipeline/
 ├── Dockerfile                Middleware image
 └── requirements.txt          fastapi, uvicorn, aiohttp, chromadb, pydantic
 ```
-
-## What this pipeline is NOT
-
-- Not a web scraper — no SearXNG, no trafilatura, no URL fetching.
-- Not a PDF extractor — no pdfplumber, no bibliography regex.
-- Not a CrossRef client — no DOI enrichment.
-- Not a relational store — no PostgreSQL, no SQLite, no TTL cleanup loop.
-
-All of the above were removed in the v0.2 refactor. The LLM is asked to
-disclose its sources; the middleware trusts that disclosure, dedupes it
-against a cache, and stores it. That's the entire PoC.
