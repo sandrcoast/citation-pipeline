@@ -170,21 +170,10 @@ class CitationRecord(BaseModel):
             "created_at": self.created_at.isoformat(),
         }
 
-    def to_user_view(self) -> dict:
-        return {
-            "title": self.title,
-            "type": self.source_type.value,
-            "authors": self.authors,
-            "date": self.date_published,
-            "style": self.citation_style_detected.value if self.citation_style_detected else None,
-            "publisher": self.publisher,
-            "url": self.access_url,
-            "doi": self.doi,
-        }
-
     def to_a2a_meta(self) -> dict:
-        """A2A-compatible metadata block."""
-        return {
+        """A2A-compatible metadata block. Null/empty fields are omitted to keep
+        payloads compact and reduce noise for downstream LLMs."""
+        full = {
             "type": "citation_record",
             "version": "1.0",
             "cid": self.cid,
@@ -205,6 +194,7 @@ class CitationRecord(BaseModel):
             "prompt_id": self.prompt_id,
             "extracted_at": self.created_at.isoformat(),
         }
+        return {k: v for k, v in full.items() if v not in (None, "", [])}
 
 
 # ── Prompt-level wrapper ─────────────────────────────────────────────────
@@ -231,8 +221,3 @@ class PromptCitationResult(BaseModel):
             "timestamp": self.created_at.isoformat(),
         }
 
-    def to_user_response(self) -> dict:
-        return {
-            "prompt_id": self.prompt_id,
-            "citations": [c.to_user_view() for c in self.citations],
-        }

@@ -7,7 +7,7 @@ Flow (citations=true):
   1. Single Ollama call → (answer_text, [CitationRecord])
   2. Reconcile sources against ChromaDB (global cache check + insert new)
   3. Upsert citations into ChromaDB (inline, before response)
-  4. Return {response, citation_metadata (A2A), citation_user}
+  4. Return {response, citation_metadata (A2A)}
 
 Flow (citations=false): transparent proxy — forwards to Ollama unchanged.
 
@@ -115,7 +115,6 @@ async def generate(request: GenerateRequest):
         "citation_records_count": len(result.citations),
         "_fetched_sources": fetched_sum,
         "citation_metadata": result.to_a2a_envelope(),
-        "citation_user": result.to_user_response(),
     })
 
 
@@ -147,7 +146,6 @@ async def chat(request: ChatRequest):
         "citation_records_count": len(result.citations),
         "_fetched_sources": fetched_sum,
         "citation_metadata": result.to_a2a_envelope(),
-        "citation_user": result.to_user_response(),
     })
 
 

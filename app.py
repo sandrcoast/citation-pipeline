@@ -168,7 +168,7 @@ def send_prompt(prompt: str, model: str, citations: bool, base_url: str) -> None
     if isinstance(meta, dict):
         citations = meta.get("citations") or []
     if citations:
-        print("\n--- first 3 citation records ---")
+        print("\n--- citation records (up to 3, full set in JSON file below) ---")
         print(json.dumps(citations[:3], ensure_ascii=False, indent=2))
 
     try:
