@@ -1,34 +1,24 @@
 # Ollama Modelfile for Gemma 3 with citation awareness
 #
-# This Modelfile extends the base Gemma 3 model with system-level
-# instructions that make it citation-aware. When the middleware
-# sends extraction prompts, the model is already primed for the task.
+# The middleware sends its own detailed system prompt on each /api/generate
+# call (see core/extractor.SYSTEM_PROMPT), which takes precedence over the
+# SYSTEM block below. This Modelfile mainly exists to:
+#   - pin deterministic parameters (temperature 0.0, num_ctx 8192)
+#   - give the model a baseline priming for citation-aware conversation
 #
-# IMPORTANT: The FROM line must match your OLLAMA_MODEL in config.py.
-# Default: gemma3:1b (lightest). Change to gemma3:4b, gemma3:12b, etc.
+# IMPORTANT: The FROM line must match OLLAMA_MODEL in config.py.
 #
 # Build: ollama create gemma3-1b-cite -f Modelfile
-# Run:   ollama run gemma3-1b-cite
 
 FROM gemma3:1b
 
-# Citation-aware system prompt. This doesn't change normal conversation
-# but makes the model better at structured extraction when asked.
 SYSTEM """You are a helpful assistant with strong academic citation awareness.
+When you produce an answer, you will also be asked to list every source you
+relied on. After your natural-language answer, output the literal marker
+---REFERENCES--- on its own line, followed by a JSON array of the sources.
+Each JSON item must include: title, authors, date, source_type, citation_style,
+publisher, doi, url, raw_fragment, confidence. Do not invent sources."""
 
-When asked to extract citations, you return ONLY valid JSON arrays with no markdown formatting.
-Each citation object must include: title, authors (array), date, source_type, citation_style, publisher, doi, url, raw_fragment, confidence.
-
-For normal conversations, respond naturally and helpfully. When you reference academic sources,
-try to include author names and publication years in your responses."""
-
-# Low temperature for reliable structured output during extraction
-PARAMETER temperature 0.3
-
-# Reasonable context for handling page-length text inputs
+PARAMETER temperature 0.0
 PARAMETER num_ctx 8192
-
-# Stop sequences to prevent runaway generation during extraction
-PARAMETER stop "```"
-PARAMETER stop "\n\nNote:"
-PARAMETER stop "\n\nExplanation:"
+PARAMETER num_predict 4096

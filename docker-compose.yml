@@ -1,30 +1,26 @@
-# docker-compose.yml — Full citation pipeline stack
+# docker-compose.yml — Citation pipeline stack
 #
 # Services:
-#   - ollama: LLM backend (Gemma 3)
-#   - middleware: Citation extraction proxy (FastAPI)
-#   - searxng: Self-hosted web search (no API keys needed)
-#   - postgres: Relational storage with TTL
-#   - chromadb: Vector storage (optional — middleware embeds it by default)
+#   - ollama:     LLM backend (Gemma 3)
+#   - middleware: Citation extraction proxy (FastAPI + embedded ChromaDB)
 #
 # Quick start:
 #   docker-compose up -d
-#   ollama pull gemma3:1b          # inside ollama container
-#   ollama create gemma3-1b-cite -f /modelfiles/Modelfile
+#   docker exec -it citation-pipeline-ollama-1 ollama pull gemma3:1b
+#   docker exec -it citation-pipeline-ollama-1 ollama create gemma3-1b-cite -f /modelfiles/Modelfile
 #
 # Then point your client to http://localhost:8000 instead of :11434
 
 version: "3.8"
 
 services:
-  # ── Ollama (LLM backend) ───────────────────────────────────────────
   ollama:
     image: ollama/ollama:latest
     ports:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
-      - ./ollama_patch:/modelfiles  # mount our Modelfile
+      - ./ollama_patch:/modelfiles
     deploy:
       resources:
         reservations:
@@ -34,49 +30,22 @@ services:
               capabilities: [gpu]
     restart: unless-stopped
 
-  # ── Citation Middleware (the proxy) ────────────────────────────────
   middleware:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"   # ← clients connect here instead of Ollama
+      - "8000:8000"
     environment:
       - OLLAMA_URL=http://ollama:11434
-      - SEARXNG_URL=http://searxng:8080
-      - PG_DSN=postgresql://citation_user:citation_pass@postgres:5432/citations
-      - RETENTION_DAYS=180
+      - OLLAMA_MODEL=gemma3:1b
+      - CHROMA_PERSIST_DIR=/app/data/chromadb
+    volumes:
+      - chroma_data:/app/data
     depends_on:
       - ollama
-      - searxng
-      - postgres
-    restart: unless-stopped
-
-  # ── SearXNG (self-hosted search) ──────────────────────────────────
-  searxng:
-    image: searxng/searxng:latest
-    ports:
-      - "8888:8080"
-    volumes:
-      - searxng_data:/etc/searxng
-    environment:
-      - SEARXNG_BASE_URL=http://localhost:8888
-    restart: unless-stopped
-
-  # ── PostgreSQL (relational storage) ───────────────────────────────
-  postgres:
-    image: postgres:16-alpine
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_DB: citations
-      POSTGRES_USER: citation_user
-      POSTGRES_PASSWORD: citation_pass
-    volumes:
-      - pg_data:/var/lib/postgresql/data
     restart: unless-stopped
 
 volumes:
   ollama_data:
-  searxng_data:
-  pg_data:
+  chroma_data:

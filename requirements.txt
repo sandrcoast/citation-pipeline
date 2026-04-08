@@ -1,29 +1,23 @@
 # Citation Pipeline — Python dependencies
 # Install: pip install -r requirements.txt
+#
+# Verified against imports:
+#   fastapi, pydantic       → middleware/proxy.py, core/models.py
+#   uvicorn                 → runtime (uvicorn middleware.proxy:app)
+#   aiohttp                 → core/extractor.py, middleware/proxy.py
+#   chromadb                → storage/store.py
+#   pytest                  → tests/test_pipeline.py
 
 # Core framework
-fastapi>=0.110.0
-uvicorn[standard]>=0.29.0
-pydantic>=2.6.0
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.9.0
 
-# Async HTTP (talking to Ollama, SearXNG, fetching URLs)
-aiohttp>=3.9.0
+# Async HTTP client (Ollama communication)
+aiohttp>=3.10.0
 
-# HTML → text extraction (for fetched web pages)
-trafilatura>=1.8.0
-
-# Vector storage (pick one or both)
-chromadb>=0.4.24           # embedded, zero-config — default
-# qdrant-client>=1.8.0     # uncomment if using Qdrant instead
-
-# PostgreSQL async driver
-asyncpg>=0.29.0
-
-# SQLite async (fallback for dev/testing)
-aiosqlite>=0.20.0
-
-# PDF text extraction (for online PDF sources)
-pdfplumber>=0.11.0
+# Vector storage (embedded, zero-config)
+chromadb>=0.5.0
 
 # Testing
-pytest>=8.0.0
+pytest>=8.3.0

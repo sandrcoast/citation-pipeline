@@ -2,184 +2,198 @@
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-A lightweight, open-source middleware that intercepts Ollama prompts and
-automatically extracts, normalizes, and stores academic citation metadata
-from online sources. Works with any Ollama + Gemma 3 deployment — from a
-single developer laptop to a multi-user server.
+A lightweight middleware proxy between your Ollama client and an Ollama
+backend (Gemma 3). When a prompt is sent with `citations: true`, the
+middleware asks the LLM to emit both its natural-language answer **and**
+a structured JSON list of every source it relied on, then reconciles those
+sources against a ChromaDB cache before returning the response.
 
-## Project Map (5 Articles)
+## Design principles
 
-| Art. | Deliverable | Files | What it does |
-|------|-------------|-------|--------------|
-| **1** | Pipeline Architecture | `ARCHITECTURE.md` | Conceptual flow: search → fetch → extract → store |
-| **2** | Sample Article | `samples/sample_article.py` | Jane Doe article with APA, MLA, Chicago, and web citations |
-| **3** | Extraction Engine | `core/extractor.py` | Async extraction with semaphore-based concurrency control |
-| **4** | A2A Middleware | `middleware/proxy.py` + `core/models.py` | FastAPI proxy with A2A-compatible metadata output |
-| **5** | Storage Layer | `storage/store.py` | ChromaDB + PostgreSQL with TTL-based retention (6–12 months) |
-
-## Quick Start
-
-### 1. Run the tests (no dependencies needed)
-```bash
-cd citation-pipeline
-PYTHONPATH=. python tests/test_core_logic.py
-```
-
-### 2. Start the full stack
-```bash
-# Start Ollama, SearXNG, PostgreSQL
-docker-compose up -d
-
-# Pull and configure Gemma 3
-docker exec -it citation-pipeline-ollama-1 ollama pull gemma3:1b
-docker exec -it citation-pipeline-ollama-1 ollama create gemma3-1b-cite -f /modelfiles/Modelfile
-
-# Start the middleware
-pip install -r requirements.txt
-uvicorn middleware.proxy:app --host 0.0.0.0 --port 8000 --workers 4
-```
-
-### 3. Send a prompt with citations enabled
-```bash
-# Without citations (transparent proxy — same as Ollama)
-curl http://localhost:8000/api/generate \
-  -d '{"model":"gemma3-1b-cite","prompt":"What is attention in neural networks?"}'
-
-# With citations (adds citation_metadata to response)
-curl http://localhost:8000/api/generate \
-  -d '{"model":"gemma3-1b-cite","prompt":"What is attention in neural networks?","citations":true}'
-```
-
-### 4. Retrieve citations later (A2A compatible)
-```bash
-# By prompt ID (returned in every response)
-curl http://localhost:8000/api/citations/{prompt_id}
-
-# Semantic search across all stored citations
-curl http://localhost:8000/api/citations/search/attention%20mechanisms
-```
+- **LLM is the source of truth** for which references were used.
+  No web scraping, no PDF parsing, no regex bibliography detection.
+- **Single Ollama call** per user prompt. One pass, `temperature=0.0`.
+- **ChromaDB as cache**, not vector search. `source_id` lookup is `collection.get()` — O(1), no embeddings on the hot path.
+- **Inline reconcile**. Sources are checked + upserted into ChromaDB
+  **before** the response reaches the user, so the returned
+  `citation_metadata` matches what's stored.
+- **A2A-compatible envelope** — another agent can parse `citation_metadata` directly.
 
 ## Architecture
 
 ```
-┌─────────┐     ┌──────────────────────┐     ┌────────────┐
-│  User /  │────▶│  Citation Middleware  │────▶│   Ollama   │
-│  Client  │◀────│  (FastAPI :8000)      │◀────│  Gemma 3   │
-└─────────┘     └──────┬───────────────┘     └────────────┘
-                       │
-              ┌────────┼────────┐
-              ▼        ▼        ▼
-        ┌─────────┐ ┌──────┐ ┌──────────┐
-        │ SearXNG │ │Chroma│ │ Postgres │
-        │ :8888   │ │  DB  │ │  :5432   │
-        └─────────┘ └──────┘ └──────────┘
+┌──────────┐     ┌────────────────────────┐     ┌────────────┐
+│  Client  │────▶│  Citation Middleware   │────▶│   Ollama   │
+│          │◀────│  (FastAPI, :8000)      │◀────│  Gemma 3   │
+└──────────┘     └───────────┬────────────┘     └────────────┘
+                             │
+                             ▼
+                      ┌────────────┐
+                      │  ChromaDB  │
+                      │ (embedded) │
+                      │            │
+                      │ sources    │
+                      │ citations  │
+                      └────────────┘
 ```
 
-## Response Format (with citations=true)
+## Pipeline (citations=true)
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant MW as Middleware
+    participant Ollama
+    participant Chroma as ChromaDB
+
+    User->>MW: POST /api/generate {prompt, citations:true}
+    MW->>Ollama: generate (answer + ---REFERENCES--- + JSON)
+    Ollama-->>MW: raw text
+    MW->>MW: split output, parse refs → CitationRecord[]
+    MW->>Chroma: get(ids=[source_ids]) — cache lookup
+    Chroma-->>MW: existing source_ids
+    MW->>Chroma: upsert new sources
+    MW->>Chroma: upsert citations (per-prompt)
+    MW-->>User: {response, citation_metadata, citation_user}
+```
+
+## Data model
+
+**`sources` collection** — global dedup table
+- id: `source_id` = sha256 of (`doi` → else normalized `url` → else title+authors)
+- metadata: `title, canonical_ref, source_type, first_prompt_id, first_seen_at`
+
+**`citations` collection** — per-prompt records linked to sources via `source_id`
+- id: `cid` = sha256 of (title + sorted authors + date)
+- metadata: `cid, source_id, prompt_id, title, authors_json, date_published, publisher, doi, access_url, citation_style, confidence, created_at`
+
+## Quick Start
+
+```bash
+# 1. Install
+pip install -r requirements.txt
+
+# 2. Verify Ollama is running with a Gemma 3 model
+ollama list   # expect gemma3:1b or similar
+
+# 3. Run tests (no Ollama, no ChromaDB required)
+PYTHONPATH=. python tests/test_pipeline.py
+
+# 4. Start the middleware
+PYTHONPATH=. uvicorn middleware.proxy:app --host 0.0.0.0 --port 8000
+```
+
+### Transparent pass-through (citations=false)
+
+```bash
+curl http://localhost:8000/api/generate \
+  -d '{"model":"gemma3:1b","prompt":"What is deep learning?"}'
+```
+
+### With citations
+
+```bash
+curl http://localhost:8000/api/generate \
+  -d '{"model":"gemma3:1b","prompt":"What is attention in neural networks?","citations":true}'
+```
+
+Response shape:
 
 ```json
 {
-  "model": "gemma3-1b-cite",
+  "model": "gemma3:1b",
   "response": "Attention mechanisms allow neural networks to...",
   "_prompt_id": "a1b2c3d4-...",
-
   "citation_metadata": {
     "schema": "citation_extraction",
     "version": "1.0",
     "prompt_id": "a1b2c3d4-...",
-    "total_citations": 3,
+    "total_citations": 1,
     "citations": [
       {
         "type": "citation_record",
-        "cid": "a7f3c9d1...",
+        "cid": "a7f3...",
+        "source_id": "b2e1...",
+        "source_cached": false,
         "title": "Attention Is All You Need",
-        "source_type": "conference_paper",
         "authors": ["Vaswani, A.", "Shazeer, N."],
         "date_published": "2017",
-        "citation_style_detected": "APA",
         "publisher": "NeurIPS",
         "doi": "10.48550/arXiv.1706.03762",
-        "confidence": 0.95,
-        "discovery_method": "in_page_bibliography"
+        "access_url": null,
+        "source_type": "conference_paper",
+        "citation_style_detected": "APA",
+        "discovery_method": "llm_training_knowledge",
+        "confidence": 0.95
       }
     ]
   },
-
   "citation_user": {
     "prompt_id": "a1b2c3d4-...",
-    "citations": [
-      {
-        "title": "Attention Is All You Need",
-        "type": "conference_paper",
-        "authors": ["Vaswani, A.", "Shazeer, N."],
-        "date": "2017",
-        "publisher": "NeurIPS",
-        "url": "https://doi.org/10.48550/arXiv.1706.03762"
-      }
-    ]
+    "citations": [{"title": "...", "authors": [...], "doi": "...", "url": null}]
   }
 }
 ```
 
-## Key Design Decisions
+The `source_cached` field tells downstream agents whether the source was
+already known to this deployment before the prompt ran.
 
-- **Content-hash CID**: SHA-256 of (title + authors + date). Same paper = same ID everywhere. Enables dedup across prompts, users, and deployments — no org-specific IDs needed.
-- **Semaphore concurrency**: GPU is the bottleneck, so Ollama calls are limited (default: 5 concurrent). URL fetching uses a larger semaphore (20) since it's I/O-bound.
-- **Dual storage**: ChromaDB for semantic search (embedded, zero-config), PostgreSQL for relational queries and TTL management.
-- **TTL retention**: Citations expire after 6 months (configurable up to 12 months). Soft-delete → 30-day grace → hard-delete.
-- **A2A protocol**: The `citation_metadata` block follows Google's A2A spec. Another agent can parse it directly without documentation.
-- **SearXNG**: Self-hosted search aggregator. No API keys, no rate limits, no vendor lock-in.
-- **Transparent proxy**: Without `citations: true`, the middleware is invisible. Existing Ollama clients work unchanged.
-- **Scoped domains** (optional): Pin search to specific domains (e.g., your organization's digital library). Disabled by default — searches the open web.
-- **Bibliography-aware extraction**: Detects bibliography/references sections by header pattern, extracts the full section, and chunks it for Gemma 3 (30 refs per chunk by default). Handles systematic reviews with 200+ references.
-- **PDF fallback**: When HTML is truncated or bibliographies are stripped by HTML extractors, automatically fetches the PDF version and extracts text via pdfplumber. Supports Springer, Elsevier, and arXiv URL patterns.
-- **CrossRef enrichment**: After extraction, resolves missing DOIs via the CrossRef API (free, no API key). Most PDF bibliographies don't embed DOIs — this step fills them in.
+### Retrieve by prompt
 
-## Tested Coverage
-
-Validated on "Deep Learning and Neurology: A Systematic Review" (Valliani et al., 2019, Neurology and Therapy) — a systematic review with 83 Vancouver-style references:
-
-```
-Before fixes:  25/83 = 30.1%  (truncation lost 58 refs)
-After fixes:   83/83 = 100.0%
+```bash
+curl http://localhost:8000/api/citations/{prompt_id}
 ```
 
-## Swapping Vector DB
+### Semantic search across stored citations
 
-ChromaDB is the default (embedded, simplest). To switch to Qdrant:
-
-```python
-# In storage/store.py or via environment variable
-StoreConfig(use_qdrant=True, qdrant_url="http://localhost:6333")
+```bash
+curl http://localhost:8000/api/citations/search/attention%20mechanisms
 ```
 
-Both backends implement the same interface. The middleware doesn't know which one is running.
+## LLM output contract
 
-## File Structure
+The middleware instructs the model (via system prompt in
+[core/extractor.py](core/extractor.py)) to produce:
+
+```
+<free-form answer>
+---REFERENCES---
+[{"title": "...", "authors": [...], "date": "...", "source_type": "...",
+  "citation_style": "...", "publisher": "...", "doi": "...", "url": "...",
+  "raw_fragment": "...", "confidence": 0.0}]
+```
+
+If the marker is missing, the answer is returned whole and references
+default to `[]` — graceful degradation.
+
+## File layout
 
 ```
 citation-pipeline/
-├── LICENSE                  # Apache License 2.0
-├── ARCHITECTURE.md          # Art.1: Pipeline design doc
-├── README.md                # This file
-├── docker-compose.yml       # Full stack orchestration
-├── Dockerfile               # Middleware container
-├── requirements.txt         # Python dependencies
+├── config.py                 Ollama + ChromaDB settings (single source of truth)
 ├── core/
-│   ├── models.py            # Art.4: Pydantic data models + A2A views
-│   ├── extractor.py         # Art.3: Async extraction with bibliography detection + PDF fallback
-│   └── enrichment.py        # CrossRef DOI enrichment (post-extraction)
+│   ├── models.py             CitationRecord, Source, compute_source_id, A2A views
+│   └── extractor.py          Single-call Ollama extractor + output parser
 ├── middleware/
-│   └── proxy.py             # Art.4: FastAPI proxy with A2A output
+│   └── proxy.py              FastAPI endpoints + inline reconcile flow
 ├── storage/
-│   └── store.py             # Art.5: ChromaDB + PostgreSQL + TTL
+│   └── store.py              ChromaDB store with two collections + reconcile
 ├── ollama_patch/
-│   └── Modelfile            # Gemma 3 citation-aware model config
-├── samples/
-│   └── sample_article.py    # Art.2: Test fixture with mixed citations
-└── tests/
-    ├── test_core_logic.py   # Stdlib-only tests (9/9 passing)
-    ├── test_pipeline.py     # Full integration tests (needs dependencies)
-    ├── test_springer_article.py  # Real article test (25-ref subset)
-    └── test_full_83refs.py  # Full 83-ref coverage test
+│   └── Modelfile             Optional citation-aware model tag
+├── tests/
+│   └── test_pipeline.py      Unit tests (no Ollama / Chroma required)
+├── docker-compose.yml        Ollama + middleware
+├── Dockerfile                Middleware image
+└── requirements.txt          fastapi, uvicorn, aiohttp, chromadb, pydantic
 ```
+
+## What this pipeline is NOT
+
+- Not a web scraper — no SearXNG, no trafilatura, no URL fetching.
+- Not a PDF extractor — no pdfplumber, no bibliography regex.
+- Not a CrossRef client — no DOI enrichment.
+- Not a relational store — no PostgreSQL, no SQLite, no TTL cleanup loop.
+
+All of the above were removed in the v0.2 refactor. The LLM is asked to
+disclose its sources; the middleware trusts that disclosure, dedupes it
+against a cache, and stores it. That's the entire PoC.

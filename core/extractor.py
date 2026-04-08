@@ -1,21 +1,20 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2025 Citation Pipeline Contributors
 """
-core/extractor.py — Citation extraction engine.
+core/extractor.py — Single-call citation extractor.
 
-Calls Ollama's /api/generate endpoint with a lightweight prompt
-to extract citations from fetched web page text. Handles:
-  - Concurrent extraction across multiple sources (asyncio + semaphore)
-  - Rate-limiting to avoid overwhelming Ollama GPU
-  - Batched processing for dozens of simultaneous user prompts
-  - Graceful degradation if Ollama is overloaded
+One Ollama call produces both the natural-language answer and a JSON
+references block. No web search, no fetching, no PDF parsing — the LLM
+is the source of truth for which references it used to compose the answer.
 
-Usage:
-    extractor = CitationExtractor(ollama_url="http://localhost:11434")
-    citations = await extractor.extract_from_texts([
-        SourceText(url="https://...", text="...page content..."),
-        SourceText(url="https://...", text="...page content..."),
-    ], prompt_id="abc-123")
+Output format (Option C — trailing JSON block):
+
+    <free-form answer prose>
+    ---REFERENCES---
+    [{"title": ..., "authors": [...], "date": ..., ...}, ...]
+
+If the marker is missing, references default to [] and the whole response
+is returned as the answer (graceful degradation).
 """
 
 from __future__ import annotations
@@ -24,12 +23,12 @@ import asyncio
 import json
 import logging
 import re
-import time
 from dataclasses import dataclass
 from typing import Optional
 
 import aiohttp
 
+from config import cfg
 from core.models import (
     CitationRecord,
     CitationStyle,
@@ -40,681 +39,254 @@ from core.models import (
 logger = logging.getLogger(__name__)
 
 
-# ── Configuration ─────────────────────────────────────────────────────────
-
-from config import cfg
-
-@dataclass
-class ExtractorConfig:
-    """
-    Tunable knobs. Defaults are loaded from config.py (the central config).
-    Override per-instance or via environment variables.
-    """
-
-    ollama_url: str = cfg.OLLAMA_URL
-    model: str = cfg.OLLAMA_MODEL
-
-    # Concurrency
-    max_concurrent_extractions: int = cfg.MAX_CONCURRENT_EXTRACTIONS
-    max_concurrent_fetches: int = cfg.MAX_CONCURRENT_FETCHES
-
-    # Text truncation
-    max_text_head_chars: int = cfg.MAX_TEXT_HEAD_CHARS
-    max_text_tail_chars: int = cfg.MAX_TEXT_TAIL_CHARS
-
-    # Bibliography chunking
-    max_refs_per_chunk: int = cfg.MAX_REFS_PER_CHUNK
-    gemma3_max_input_chars: int = cfg.GEMMA_MAX_INPUT_CHARS
-
-    # PDF fallback
-    enable_pdf_fallback: bool = cfg.ENABLE_PDF_FALLBACK
-    pdf_fetch_timeout_s: int = cfg.PDF_FETCH_TIMEOUT_S
-
-    # Timeouts
-    ollama_timeout_s: int = cfg.OLLAMA_TIMEOUT_S
-    fetch_timeout_s: int = cfg.FETCH_TIMEOUT_S
-
-    # Search
-    searxng_url: str = cfg.SEARXNG_URL
-    scoped_domains: list = None  # type: ignore
-
-    def __post_init__(self):
-        if self.scoped_domains is None:
-            self.scoped_domains = cfg.SCOPED_DOMAINS
+REFERENCES_MARKER = "---REFERENCES---"
 
 
-# ── Extraction Prompt ─────────────────────────────────────────────────────
+SYSTEM_PROMPT = f"""You are an assistant that answers questions AND discloses every source you relied on.
 
-EXTRACTION_SYSTEM_PROMPT = """You are a citation extraction assistant. Given a text fragment from a web page or document, find ALL references, citations, and bibliographic entries.
+Output format (STRICT — follow exactly):
 
-For each citation found, return a JSON object with these fields:
+1. First, write your complete natural-language answer to the user's question.
+2. Then, on a new line, write the literal marker: {REFERENCES_MARKER}
+3. Then, output a JSON array listing EVERY source that informed your answer.
+   Include training-knowledge sources (papers, books, standards) even if you
+   did not browse the web.
+
+Each JSON item must have these fields (use null for unknown):
 - "title": title of the referenced work
 - "authors": array of author names (Last, First Initial format)
 - "date": publication year or full date
 - "source_type": one of: journal_article, book, book_chapter, conference_paper, thesis, preprint, academic_url, institutional_report, blog_nonacademic, news_article, dataset, standard_spec, unknown
-- "citation_style": one of: APA, MLA, Chicago, IEEE, Vancouver, Harvard, unknown (or null if no formal style)
-- "publisher": journal name, publisher, or conference
-- "doi": DOI if present (without https://doi.org/ prefix)
-- "url": access URL if present
-- "raw_fragment": the exact citation text, max 300 chars
-- "confidence": 0.0-1.0 your confidence in extraction accuracy
+- "citation_style": one of: APA, MLA, Chicago, IEEE, Vancouver, Harvard, unknown
+- "publisher": journal, publisher, or conference
+- "doi": DOI if known (without https://doi.org/ prefix)
+- "url": access URL if known
+- "raw_fragment": a short verbatim citation-style string, max 300 chars
+- "confidence": 0.0-1.0 your confidence in this reference
 
-Return ONLY a JSON array. No explanation, no markdown fences. If no citations found, return [].
+Rules:
+- The marker {REFERENCES_MARKER} must appear EXACTLY ONCE, after the full answer.
+- The references block must be a JSON array. No prose, no markdown fences.
+- If you used no external sources, output an empty array: []
+- Do not invent sources. If unsure, omit or mark confidence low."""
 
-Example output:
-[{"title":"Example Paper","authors":["Smith, J.","Doe, A."],"date":"2023","source_type":"journal_article","citation_style":"APA","publisher":"Nature","doi":"10.1234/example","url":null,"raw_fragment":"Smith, J. & Doe, A. (2023). Example Paper. Nature.","confidence":0.95}]"""
-
-
-# ── Source Text Container ─────────────────────────────────────────────────
 
 @dataclass
-class SourceText:
-    """A fetched web page's content, ready for extraction."""
-    url: str
-    text: str
-    discovery_method: DiscoveryMethod = DiscoveryMethod.WEB_SEARCH
+class ExtractorConfig:
+    ollama_url: str = cfg.OLLAMA_URL
+    model: str = cfg.OLLAMA_MODEL
+    max_concurrent: int = cfg.MAX_CONCURRENT_EXTRACTIONS
+    timeout_s: int = cfg.OLLAMA_TIMEOUT_S
 
-
-# ── Extractor Engine ──────────────────────────────────────────────────────
 
 class CitationExtractor:
-    """
-    Async citation extraction engine.
-
-    Designed for high concurrency:
-    - Semaphore limits concurrent Ollama calls (GPU is the bottleneck)
-    - URL fetching uses a separate, larger semaphore (I/O bound)
-    - Each user prompt gets its own extraction task
-    - Multiple user prompts can run simultaneously
-    """
+    """Single-call answer+references extractor."""
 
     def __init__(self, config: Optional[ExtractorConfig] = None):
         self.config = config or ExtractorConfig()
-        # Semaphore: limits how many Ollama calls run in parallel
-        self._ollama_sem = asyncio.Semaphore(self.config.max_concurrent_extractions)
-        # Semaphore: limits how many URL fetches run in parallel
-        self._fetch_sem = asyncio.Semaphore(self.config.max_concurrent_fetches)
+        self._sem = asyncio.Semaphore(self.config.max_concurrent)
 
-    # ── Public API ────────────────────────────────────────────────────
-
-    async def extract_from_texts(
+    async def generate_with_citations(
         self,
-        sources: list[SourceText],
+        user_prompt: str,
         prompt_id: str,
-    ) -> list[CitationRecord]:
+    ) -> tuple[str, list[CitationRecord]]:
         """
-        Extract citations from multiple source texts concurrently.
-
-        This is the main entry point. Call this once per user prompt.
-        It handles parallelism, dedup, and normalization internally.
-
-        Args:
-            sources: List of fetched page texts to extract from
-            prompt_id: Unique ID for this user prompt (for provenance)
-
-        Returns:
-            Deduplicated list of CitationRecord objects
+        Single Ollama call. Returns (answer_text, citation_records).
+        Records have empty source_id — populated later by store.reconcile_sources.
         """
-        start = time.monotonic()
+        raw = await self._call_ollama(user_prompt)
+        if not raw:
+            return ("", [])
 
-        # Run extraction on all sources concurrently (semaphore-limited)
-        tasks = [
-            self._extract_single(source, prompt_id)
-            for source in sources
-        ]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        answer, refs_json = self._split_output(raw)
+        records = self._parse_references(refs_json, prompt_id)
+        return (answer, records)
 
-        # Flatten results, skip errors
-        all_citations: list[CitationRecord] = []
-        for i, result in enumerate(results):
-            if isinstance(result, Exception):
-                logger.warning(
-                    f"Extraction failed for {sources[i].url}: {result}"
-                )
-                continue
-            all_citations.extend(result)
+    # ── Ollama call ───────────────────────────────────────────────────
 
-        # Dedup by content hash (CID)
-        seen_cids: set[str] = set()
-        unique: list[CitationRecord] = []
-        for c in all_citations:
-            if c.cid not in seen_cids:
-                seen_cids.add(c.cid)
-                unique.append(c)
-
-        elapsed = int((time.monotonic() - start) * 1000)
-        logger.info(
-            f"Extracted {len(unique)} unique citations from "
-            f"{len(sources)} sources in {elapsed}ms (prompt={prompt_id})"
-        )
-        return unique
-
-    async def search_and_extract(
-        self,
-        query: str,
-        prompt_id: str,
-    ) -> list[CitationRecord]:
-        """
-        Full pipeline: search → fetch → extract.
-
-        1. Searches SearXNG for the query (open web)
-        2. Optionally searches scoped domains (if configured)
-        3. Fetches all result URLs
-        4. Extracts citations from each
-        """
-        # Phase 1: Search
-        search_urls = await self._search(query)
-        logger.info(f"Search returned {len(search_urls)} URLs for prompt={prompt_id}")
-
-        # Phase 2: Fetch all URLs concurrently
-        sources = await self._fetch_urls(search_urls)
-        logger.info(f"Fetched {len(sources)} pages for prompt={prompt_id}")
-
-        # Phase 3: Extract
-        return await self.extract_from_texts(sources, prompt_id)
-
-    # ── Internal: Ollama Call ─────────────────────────────────────────
-
-    async def _extract_single(
-        self,
-        source: SourceText,
-        prompt_id: str,
-    ) -> list[CitationRecord]:
-        """
-        Extract citations from a single source text.
-        Uses bibliography detection + chunked extraction for long ref lists.
-        Semaphore-limited to avoid overwhelming Ollama GPU.
-        """
-        if len(source.text.strip()) < 50:
-            return []  # too short to contain citations
-
-        # Prepare text chunks (1 for normal articles, N for long bibliographies)
-        chunks = self._prepare_extraction_text(source.text)
-
-        all_records: list[CitationRecord] = []
-        for chunk in chunks:
-            async with self._ollama_sem:  # ← rate limiting happens here
-                raw_json = await self._call_ollama(chunk)
-
-            if not raw_json:
-                continue
-
-            records = self._parse_extraction_response(
-                raw_json, source.url, source.discovery_method, prompt_id
-            )
-            all_records.extend(records)
-
-        return all_records
-
-    async def _call_ollama(self, text: str) -> Optional[str]:
-        """
-        Call Ollama /api/generate with the extraction prompt.
-        Returns raw response text (should be JSON array).
-        """
+    async def _call_ollama(self, user_prompt: str) -> Optional[str]:
         payload = {
             "model": self.config.model,
-            "system": EXTRACTION_SYSTEM_PROMPT,
-            "prompt": f"Extract all citations from this text:\n\n{text}",
+            "system": SYSTEM_PROMPT,
+            "prompt": user_prompt,
             "stream": False,
             "options": {
-                "temperature": 0.1,      # low temp for structured extraction
-                "num_predict": 2048,      # enough for ~10 citations
+                "temperature": 0.0,
+                "num_ctx": 8192,
+                "num_predict": 4096,
             },
         }
-
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    f"{self.config.ollama_url}/api/generate",
-                    json=payload,
-                    timeout=aiohttp.ClientTimeout(total=self.config.ollama_timeout_s),
-                ) as resp:
-                    if resp.status != 200:
-                        logger.error(f"Ollama returned {resp.status}")
-                        return None
-                    data = await resp.json()
-                    return data.get("response", "")
-        except asyncio.TimeoutError:
-            logger.warning("Ollama extraction timed out")
-            return None
-        except Exception as e:
-            logger.error(f"Ollama call failed: {e}")
-            return None
-
-    # ── Internal: Search ──────────────────────────────────────────────
-
-    async def _search(self, query: str) -> list[str]:
-        """
-        Search via SearXNG (self-hosted). Returns list of URLs.
-        If scoped_domains are configured, also runs domain-specific searches.
-        """
-        urls: list[str] = []
-
-        try:
-            async with aiohttp.ClientSession() as session:
-                # General web search
-                params = {
-                    "q": query,
-                    "format": "json",
-                    "engines": "google,bing,duckduckgo",
-                    "pageno": 1,
-                }
-                async with session.get(
-                    f"{self.config.searxng_url}/search",
-                    params=params,
-                    timeout=aiohttp.ClientTimeout(total=10),
-                ) as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-                        urls.extend(r["url"] for r in data.get("results", [])[:10])
-
-                # Optional: scoped domain searches (e.g., org library, arxiv)
-                for domain in (self.config.scoped_domains or []):
-                    params["q"] = f"site:{domain} {query}"
-                    async with session.get(
-                        f"{self.config.searxng_url}/search",
-                        params=params,
-                        timeout=aiohttp.ClientTimeout(total=10),
-                    ) as resp:
-                        if resp.status == 200:
-                            data = await resp.json()
-                            urls.extend(r["url"] for r in data.get("results", [])[:5])
-
-        except Exception as e:
-            logger.error(f"Search failed: {e}")
-
-        return list(dict.fromkeys(urls))  # dedup preserving order
-
-    # ── Internal: URL Fetching ────────────────────────────────────────
-
-    async def _fetch_urls(self, urls: list[str]) -> list[SourceText]:
-        """Fetch all URLs concurrently, return extracted text."""
-        tasks = [self._fetch_single(url) for url in urls]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-
-        sources: list[SourceText] = []
-        for result in results:
-            if isinstance(result, SourceText):
-                sources.append(result)
-        return sources
-
-    async def _fetch_single(self, url: str) -> Optional[SourceText]:
-        """Fetch a single URL and extract readable text.
-        Handles both HTML and PDF content types.
-        If HTML bibliography looks incomplete, attempts PDF fallback."""
-        async with self._fetch_sem:  # rate-limit concurrent fetches
+        async with self._sem:
             try:
                 async with aiohttp.ClientSession() as session:
-                    async with session.get(
-                        url,
-                        timeout=aiohttp.ClientTimeout(total=self.config.fetch_timeout_s),
-                        headers={"User-Agent": "CitationBot/1.0 (github.com/citation-pipeline)"},
+                    async with session.post(
+                        f"{self.config.ollama_url}/api/generate",
+                        json=payload,
+                        timeout=aiohttp.ClientTimeout(total=self.config.timeout_s),
                     ) as resp:
                         if resp.status != 200:
+                            logger.error(f"Ollama returned {resp.status}")
                             return None
-                        content_type = resp.headers.get("Content-Type", "")
-
-                        # ── PDF content ──────────────────────────────
-                        if "pdf" in content_type.lower() or url.lower().endswith(".pdf"):
-                            pdf_bytes = await resp.read()
-                            text = self._extract_pdf_text(pdf_bytes)
-                            if text:
-                                return SourceText(
-                                    url=url, text=text,
-                                    discovery_method=DiscoveryMethod.WEB_SEARCH,
-                                )
-                            return None
-
-                        # ── HTML content ─────────────────────────────
-                        raw = await resp.text()
-
-                # RC3 fix: trafilatura with favor_recall to keep bibliography sections
-                try:
-                    import trafilatura
-                    text = trafilatura.extract(
-                        raw,
-                        include_links=True,
-                        include_tables=True,
-                        favor_recall=True,  # ← keeps more content incl. references
-                    ) or ""
-                except ImportError:
-                    # Fallback: naive HTML tag stripping
-                    text = re.sub(r"<[^>]+>", " ", raw)
-                    text = re.sub(r"\s+", " ", text).strip()
-
-                if len(text) < 50:
-                    return None
-
-                # ── PDF fallback: if bibliography looks truncated ────
-                if self.config.enable_pdf_fallback:
-                    bib = self._find_bibliography(text)
-                    if bib is not None:
-                        ref_count = self._estimate_ref_count(bib)
-                        # Heuristic: if the last ref number in body is much higher
-                        # than what we found in bibliography, it's truncated
-                        max_inline = self._find_max_inline_ref_number(text)
-                        if max_inline > 0 and ref_count < max_inline * 0.6:
-                            logger.info(
-                                f"Bibliography looks truncated ({ref_count} refs found, "
-                                f"~{max_inline} expected). Trying PDF fallback for {url}"
-                            )
-                            pdf_text = await self._fetch_pdf_fallback(url, session=None)
-                            if pdf_text and len(pdf_text) > len(text):
-                                text = pdf_text
-
-                return SourceText(
-                    url=url, text=text,
-                    discovery_method=DiscoveryMethod.WEB_SEARCH,
-                )
-
+                        data = await resp.json()
+                        return data.get("response", "") or None
             except Exception as e:
-                logger.debug(f"Fetch failed for {url}: {e}")
+                logger.error(f"Ollama call failed: {e}")
                 return None
 
-    # ── Internal: Text Preparation ─────────────────────────────────────
-
-    def _prepare_extraction_text(self, text: str) -> list[str]:
-        """
-        Smart text preparation for extraction. Returns a list of text chunks
-        (usually 1, but multiple for very long bibliographies).
-
-        Strategy:
-          1. Try to find the bibliography/references section
-          2. If found: extract it whole, chunk if too long for Gemma 3
-          3. If not found: fall back to head+tail truncation
-        """
-        bib = self._find_bibliography(text)
-
-        if bib is not None and len(bib.strip()) > 100:
-            # We found a bibliography section — use it whole
-            head = text[:self.config.max_text_head_chars]
-
-            # If bibliography fits in one Gemma 3 call, send it all
-            if len(bib) <= self.config.gemma3_max_input_chars:
-                return [head + "\n\n" + bib]
-
-            # Otherwise, chunk the bibliography
-            return self._chunk_bibliography(head, bib)
-        else:
-            # No bibliography detected — fall back to head+tail
-            return [self._truncate_text(text)]
-
-    def _find_bibliography(self, text: str) -> Optional[str]:
-        """
-        Locate the references/bibliography section in article text.
-        Looks for common section headers and extracts everything after.
-        """
-        # Common bibliography section headers (case-insensitive)
-        patterns = [
-            r'(?:^|\n)\s*References\s*\n',
-            r'(?:^|\n)\s*REFERENCES\s*\n',
-            r'(?:^|\n)\s*Bibliography\s*\n',
-            r'(?:^|\n)\s*BIBLIOGRAPHY\s*\n',
-            r'(?:^|\n)\s*Works Cited\s*\n',
-            r'(?:^|\n)\s*Literature Cited\s*\n',
-        ]
-
-        for pattern in patterns:
-            match = re.search(pattern, text, re.MULTILINE | re.IGNORECASE)
-            if match:
-                bib_text = text[match.start():]
-                # Trim trailing non-reference content (acknowledgments after refs, etc.)
-                # Look for sections that commonly follow references
-                end_patterns = [
-                    r'\n\s*Acknowledg[e]?ments?\s*\n',
-                    r'\n\s*Author [Ii]nformation\s*\n',
-                    r'\n\s*Supplementary\s',
-                    r'\n\s*Additional [Ii]nformation\s*\n',
-                    r'\n\s*Rights and [Pp]ermissions\s*\n',
-                    r'\n\s*About this article\s*\n',
-                ]
-                for ep in end_patterns:
-                    end_match = re.search(ep, bib_text, re.IGNORECASE)
-                    if end_match:
-                        bib_text = bib_text[:end_match.start()]
-                        break
-
-                return bib_text
-
-        return None
-
-    def _estimate_ref_count(self, bibliography: str) -> int:
-        """Estimate number of references in a bibliography section."""
-        # Vancouver style: numbered refs like "1." "2." etc.
-        numbered = re.findall(r'^\s*\d+\.?\s+\w', bibliography, re.MULTILINE)
-        if numbered:
-            return len(numbered)
-        # APA/MLA: count lines that look like citations (Author, Year pattern)
-        apa_like = re.findall(r'\n\s*[A-Z][a-z]+[\s,].*?\(\d{4}\)', bibliography)
-        if apa_like:
-            return len(apa_like)
-        # Fallback: count double-newline-separated blocks
-        blocks = [b for b in bibliography.split('\n\n') if len(b.strip()) > 30]
-        return max(len(blocks), 1)
-
-    def _find_max_inline_ref_number(self, text: str) -> int:
-        """Find the highest reference number cited inline (e.g., [83] or [ref-CR83])."""
-        # Bracketed numbers: [1], [83], [1,2,3]
-        matches = re.findall(r'\[(\d+)\]', text)
-        if matches:
-            return max(int(m) for m in matches)
-        # ref-CR style (Springer HTML)
-        cr_matches = re.findall(r'ref-CR(\d+)', text)
-        if cr_matches:
-            return max(int(m) for m in cr_matches)
-        return 0
-
-    def _chunk_bibliography(self, head: str, bibliography: str) -> list[str]:
-        """
-        Split a long bibliography into chunks that each fit in Gemma 3's context.
-        Each chunk gets the article head prepended for context.
-        """
-        # Split bibliography into individual references
-        # Try numbered refs first (Vancouver): "1. ...", "2. ..."
-        refs = re.split(r'\n(?=\s*\d+\.?\s+[A-Z])', bibliography)
-
-        # If that didn't work well, try double-newline splitting
-        if len(refs) < 3:
-            refs = [r for r in bibliography.split('\n\n') if len(r.strip()) > 20]
-
-        # Group refs into chunks of max_refs_per_chunk
-        chunks = []
-        chunk_size = self.config.max_refs_per_chunk
-        for i in range(0, len(refs), chunk_size):
-            chunk_refs = '\n'.join(refs[i:i + chunk_size])
-            chunk_text = head + "\n\n[Bibliography chunk " \
-                         f"{i // chunk_size + 1}]\n\n" + chunk_refs
-            chunks.append(chunk_text)
-
-        logger.info(
-            f"Split bibliography into {len(chunks)} chunks "
-            f"({len(refs)} refs, {chunk_size} per chunk)"
-        )
-        return chunks if chunks else [head + "\n\n" + bibliography]
-
-    def _truncate_text(self, text: str) -> str:
-        """
-        Fallback truncation when no bibliography section is detected.
-        Takes first N chars + last M chars.
-        """
-        head = self.config.max_text_head_chars
-        tail = self.config.max_text_tail_chars
-
-        if len(text) <= head + tail:
-            return text
-
-        return text[:head] + "\n\n[...truncated...]\n\n" + text[-tail:]
-
-    # ── Internal: PDF Support ─────────────────────────────────────────
-
-    def _extract_pdf_text(self, pdf_bytes: bytes) -> Optional[str]:
-        """Extract text from PDF bytes using pdfplumber."""
-        try:
-            import pdfplumber
-            import io
-            with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
-                pages = []
-                for page in pdf.pages:
-                    page_text = page.extract_text()
-                    if page_text:
-                        pages.append(page_text)
-                return '\n\n'.join(pages)
-        except ImportError:
-            logger.warning("pdfplumber not installed. Run: pip install pdfplumber")
-            return None
-        except Exception as e:
-            logger.warning(f"PDF extraction failed: {e}")
-            return None
-
-    async def _fetch_pdf_fallback(
-        self, html_url: str, session: Optional[aiohttp.ClientSession] = None
-    ) -> Optional[str]:
-        """
-        Attempt to fetch the PDF version of an article when HTML is truncated.
-        Constructs PDF URLs for known publishers (Springer, Elsevier, etc.)
-        """
-        pdf_urls = self._construct_pdf_urls(html_url)
-        if not pdf_urls:
-            return None
-
-        close_session = False
-        if session is None:
-            session = aiohttp.ClientSession()
-            close_session = True
-
-        try:
-            for pdf_url in pdf_urls:
-                try:
-                    async with session.get(
-                        pdf_url,
-                        timeout=aiohttp.ClientTimeout(
-                            total=self.config.pdf_fetch_timeout_s
-                        ),
-                        headers={"User-Agent": "CitationBot/1.0 (github.com/citation-pipeline)"},
-                    ) as resp:
-                        if resp.status == 200:
-                            ct = resp.headers.get("Content-Type", "")
-                            if "pdf" in ct.lower():
-                                pdf_bytes = await resp.read()
-                                text = self._extract_pdf_text(pdf_bytes)
-                                if text and len(text) > 500:
-                                    logger.info(
-                                        f"PDF fallback succeeded: {pdf_url} "
-                                        f"({len(text)} chars)"
-                                    )
-                                    return text
-                except Exception as e:
-                    logger.debug(f"PDF fallback failed for {pdf_url}: {e}")
-                    continue
-        finally:
-            if close_session:
-                await session.close()
-
-        return None
+    # ── Output splitting ──────────────────────────────────────────────
 
     @staticmethod
-    def _construct_pdf_urls(html_url: str) -> list[str]:
+    def _split_output(raw: str) -> tuple[str, str]:
         """
-        Construct probable PDF URLs from an HTML article URL.
-        Supports major academic publishers.
+        Split LLM output into (answer, references_json_text).
+        Uses rsplit to tolerate the marker appearing inside the answer.
+        Returns ("", "[]") on malformed output — graceful degradation.
         """
-        urls = []
-
-        # Springer: link.springer.com/article/DOI → .../content/pdf/DOI.pdf
-        if "springer.com/article/" in html_url:
-            doi_part = html_url.split("/article/")[-1].split("?")[0]
-            urls.append(f"https://link.springer.com/content/pdf/{doi_part}.pdf")
-
-        # Elsevier/ScienceDirect: extract DOI, construct PDF
-        if "sciencedirect.com" in html_url:
-            pii_match = re.search(r'/pii/(S\d+)', html_url)
-            if pii_match:
-                urls.append(
-                    f"https://www.sciencedirect.com/science/article/pii/"
-                    f"{pii_match.group(1)}/pdfft"
-                )
-
-        # arXiv: /abs/ID → /pdf/ID.pdf
-        if "arxiv.org/abs/" in html_url:
-            arxiv_id = html_url.split("/abs/")[-1].split("?")[0]
-            urls.append(f"https://arxiv.org/pdf/{arxiv_id}.pdf")
-
-        # Generic: try appending .pdf or /pdf to the URL
-        if not urls:
-            base = html_url.split("?")[0]
-            urls.append(base + ".pdf")
-            urls.append(base + "/pdf")
-
-        return urls
-
-    def _parse_extraction_response(
-        self,
-        raw: str,
-        source_url: str,
-        discovery_method: DiscoveryMethod,
-        prompt_id: str,
-    ) -> list[CitationRecord]:
-        """
-        Parse Gemma 3's JSON response into CitationRecord objects.
-        Handles malformed JSON gracefully.
-        """
+        if REFERENCES_MARKER not in raw:
+            return (raw.strip(), "[]")
+        parts = raw.rsplit(REFERENCES_MARKER, 1)
+        answer = parts[0].strip()
+        refs = parts[1].strip() if len(parts) == 2 else "[]"
         # Strip markdown code fences if present
-        cleaned = raw.strip()
-        cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
-        cleaned = re.sub(r"\s*```$", "", cleaned)
+        refs = re.sub(r"^```(?:json)?\s*", "", refs)
+        refs = re.sub(r"\s*```$", "", refs).strip()
+        return (answer, refs or "[]")
 
+    # ── Reference parsing ─────────────────────────────────────────────
+
+    def _parse_references(
+        self, refs_json: str, prompt_id: str
+    ) -> list[CitationRecord]:
+        items: Optional[list] = None
         try:
-            items = json.loads(cleaned)
+            parsed = json.loads(refs_json)
+            if isinstance(parsed, list):
+                items = parsed
+            elif isinstance(parsed, dict):
+                for v in parsed.values():
+                    if isinstance(v, list):
+                        items = v
+                        break
+                if items is None:
+                    items = [parsed]
         except json.JSONDecodeError:
-            # Try to find JSON array in the response
-            match = re.search(r"\[.*\]", cleaned, re.DOTALL)
+            match = re.search(r"\[.*\]", refs_json, re.DOTALL)
             if match:
                 try:
                     items = json.loads(match.group())
                 except json.JSONDecodeError:
-                    logger.warning(f"Could not parse extraction JSON from {source_url}")
-                    return []
+                    items = self._salvage_json_objects(refs_json)
             else:
-                return []
+                items = self._salvage_json_objects(refs_json)
 
-        if not isinstance(items, list):
+        if not items or not isinstance(items, list):
             return []
 
         records: list[CitationRecord] = []
+        seen_cids: set[str] = set()
         for item in items:
             if not isinstance(item, dict):
                 continue
-            try:
-                record = CitationRecord(
-                    title=item.get("title", "Unknown"),
-                    source_type=self._map_source_type(item.get("source_type", "unknown")),
-                    authors=item.get("authors", []),
-                    date_published=str(item.get("date", "")) or None,
-                    citation_style_detected=self._map_citation_style(item.get("citation_style")),
-                    raw_citation_fragment=(item.get("raw_fragment", "") or "")[:500] or None,
-                    publisher=item.get("publisher"),
-                    access_url=item.get("url"),
-                    doi=item.get("doi"),
-                    discovery_method=discovery_method,
-                    discovery_source_url=source_url,
-                    confidence=float(item.get("confidence", 0.5)),
-                    prompt_id=prompt_id,
-                )
-                records.append(record)
-            except Exception as e:
-                logger.debug(f"Skipping malformed citation item: {e}")
-
+            rec = self._build_record(item, prompt_id)
+            if rec and rec.cid not in seen_cids:
+                seen_cids.add(rec.cid)
+                records.append(rec)
         return records
 
-    @staticmethod
-    def _map_source_type(raw: str) -> SourceType:
+    def _build_record(
+        self, item: dict, prompt_id: str
+    ) -> Optional[CitationRecord]:
         try:
-            return SourceType(raw)
+            title = (item.get("title") or "").strip()
+            authors_raw = item.get("authors") or []
+            if not isinstance(authors_raw, list):
+                authors_raw = [str(authors_raw)]
+            authors = [str(a).strip() for a in authors_raw if str(a).strip()]
+
+            raw_url = (item.get("url") or "").strip()
+            raw_doi = (item.get("doi") or "").strip()
+            if raw_doi.startswith("http"):
+                if not raw_url:
+                    raw_url = raw_doi
+                raw_doi = ""
+            url = raw_url or None
+            doi = raw_doi or None
+
+            publisher = (item.get("publisher") or "").strip() or None
+            date_str = str(item.get("date") or "").strip() or None
+
+            # Quality filter
+            has_year = bool(date_str and re.search(r"\b(19|20)\d{2}\b", date_str))
+            has_strong_signal = bool(doi or url or publisher or has_year)
+            has_substantive_title = len(title) >= 10
+            has_real_author = any(len(a) >= 3 for a in authors)
+            if not (has_strong_signal or (has_substantive_title and has_real_author)):
+                return None
+
+            return CitationRecord(
+                title=title or "Unknown",
+                source_type=self._map_source_type(item.get("source_type")),
+                authors=authors,
+                date_published=date_str,
+                citation_style_detected=self._map_citation_style(item.get("citation_style")),
+                raw_citation_fragment=(item.get("raw_fragment") or "")[:500] or None,
+                publisher=publisher,
+                access_url=url,
+                doi=doi,
+                discovery_method=DiscoveryMethod.LLM_KNOWLEDGE,
+                confidence=float(item.get("confidence", 0.5) or 0.5),
+                prompt_id=prompt_id,
+            )
+        except Exception as e:
+            logger.debug(f"Skipping malformed citation item: {e}")
+            return None
+
+    @staticmethod
+    def _salvage_json_objects(text: str) -> list[dict]:
+        """Recover {...} objects from malformed JSON."""
+        out: list[dict] = []
+        depth = 0
+        start = -1
+        in_str = False
+        esc = False
+        for i, ch in enumerate(text):
+            if in_str:
+                if esc:
+                    esc = False
+                elif ch == "\\":
+                    esc = True
+                elif ch == '"':
+                    in_str = False
+                continue
+            if ch == '"':
+                in_str = True
+            elif ch == "{":
+                if depth == 0:
+                    start = i
+                depth += 1
+            elif ch == "}":
+                if depth > 0:
+                    depth -= 1
+                    if depth == 0 and start >= 0:
+                        try:
+                            obj = json.loads(text[start:i + 1])
+                            if isinstance(obj, dict):
+                                out.append(obj)
+                        except json.JSONDecodeError:
+                            pass
+                        start = -1
+        return out
+
+    @staticmethod
+    def _map_source_type(raw) -> SourceType:
+        try:
+            return SourceType(raw) if raw else SourceType.UNKNOWN
         except ValueError:
             return SourceType.UNKNOWN
 
     @staticmethod
-    def _map_citation_style(raw: Optional[str]) -> Optional[CitationStyle]:
+    def _map_citation_style(raw) -> Optional[CitationStyle]:
         if not raw or raw == "null":
             return None
         try:
