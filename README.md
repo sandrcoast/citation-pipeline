@@ -13,6 +13,7 @@ sources against a ChromaDB cache before returning the response.
 - **LLM is the source of truth** for which references were used.
   No web scraping, no PDF parsing, no regex bibliography detection.
 - **Single Ollama call** per user prompt. One pass, `temperature=0.0`.
+
 - **ChromaDB as cache**, not vector search. `source_id` lookup is `collection.get()` — O(1), no embeddings on the hot path.
 - **Inline reconcile**. Sources are checked + upserted into ChromaDB
   **before** the response reaches the user, so the returned
