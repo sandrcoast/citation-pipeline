@@ -27,17 +27,7 @@ curl http://localhost:11434/api/version
 
 If the model is missing: `ollama pull gemma3:1b`.
 
-## Step 4 (optional): Create the citation-aware model
-
-The Modelfile sets deterministic parameters and primes the model for the
-`---REFERENCES---` output format. You can skip this and use the plain
-base model — the middleware sends its own system prompt anyway.
-
-```bash
-ollama create gemma3-1b-cite -f ollama_patch/Modelfile
-```
-
-## Step 5: Install Python dependencies
+## Step 4: Install Python dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -45,7 +35,7 @@ pip install -r requirements.txt
 
 Five packages: fastapi, uvicorn, pydantic, aiohttp, chromadb.
 
-## Step 6: Start the middleware
+## Step 5: Start the middleware
 
 ```bash
 set PYTHONPATH=.
@@ -54,7 +44,7 @@ uvicorn middleware.proxy:app --host 0.0.0.0 --port 8000
 
 ChromaDB persists to `./data/chromadb/` — created on first write.
 
-## Step 7: Try it
+## Step 6: Try it
 
 ### Transparent proxy (no citations)
 
@@ -187,6 +177,5 @@ citation-pipeline/
 │   ├── extractor.py          ← single Ollama call + output parser
 │   └── models.py             ← CitationRecord, Source, A2A views
 ├── middleware/proxy.py       ← FastAPI entry point + reconcile flow
-├── storage/store.py          ← ChromaDB two-collection store
-└── ollama_patch/Modelfile    ← optional deterministic model tag
+└── storage/store.py          ← ChromaDB two-collection store
 ```

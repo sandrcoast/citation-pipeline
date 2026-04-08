@@ -182,7 +182,5 @@ citation-pipeline/
 │   └── proxy.py              FastAPI endpoints + inline reconcile flow
 ├── storage/
 │   └── store.py              ChromaDB store with two collections + reconcile
-├── ollama_patch/
-│   └── Modelfile             Optional citation-aware model tag
 └── requirements.txt          fastapi, uvicorn, aiohttp, chromadb, pydantic
 ```
