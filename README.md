@@ -81,11 +81,9 @@ ollama list   # expect gemma3:1b or similar
 PYTHONPATH=. uvicorn middleware.proxy:app --host 0.0.0.0 --port 8000
 ```
 
-> **Gemma 3:1b token limits** — 8 192-token context window. The pipeline
-> allocates `num_ctx=8192` and `num_predict=4096` (output budget). The system
-> prompt consumes ~400 tokens, leaving roughly **3 700 tokens (~2 800 words)**
-> for the user query. Keep prompts under ~2 000 words to leave headroom for
-> the references JSON block in the response.
+> **Gemma 3:1b token limits** — 32 768-token context window (full native capacity).
+> The pipeline sets `num_ctx=32768` and `num_predict=4096` by default, both
+> overridable via `OLLAMA_NUM_CTX` / `OLLAMA_NUM_PREDICT` env vars.
 
 ### Transparent pass-through (citations=false)
 

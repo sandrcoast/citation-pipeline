@@ -77,6 +77,8 @@ class ExtractorConfig:
     model: str = cfg.OLLAMA_MODEL
     max_concurrent: int = cfg.MAX_CONCURRENT_EXTRACTIONS
     timeout_s: int = cfg.OLLAMA_TIMEOUT_S
+    num_ctx: int = cfg.OLLAMA_NUM_CTX
+    num_predict: int = cfg.OLLAMA_NUM_PREDICT
 
 
 class CitationExtractor:
@@ -113,8 +115,8 @@ class CitationExtractor:
             "stream": False,
             "options": {
                 "temperature": 0.0,
-                "num_ctx": 8192,
-                "num_predict": 4096,
+                "num_ctx": self.config.num_ctx,
+                "num_predict": self.config.num_predict,
             },
         }
         async with self._sem:
@@ -140,14 +142,23 @@ class CitationExtractor:
     def _split_output(raw: str) -> tuple[str, str]:
         """
         Split LLM output into (answer, references_json_text).
-        Uses rsplit to tolerate the marker appearing inside the answer.
-        Returns ("", "[]") on malformed output — graceful degradation.
+        Requires the marker to appear at the start of a line — prevents false
+        splits when a small model echoes the system prompt inline
+        (e.g. "write the literal marker: ---REFERENCES---").
+        Returns (raw, "[]") on malformed output — graceful degradation.
         """
-        if REFERENCES_MARKER not in raw:
+        # Match marker only at start of a line (or at start of string)
+        pattern = re.compile(
+            r"(?:^|\n)" + re.escape(REFERENCES_MARKER), re.MULTILINE
+        )
+        matches = list(pattern.finditer(raw))
+        if not matches:
             return (raw.strip(), "[]")
-        parts = raw.rsplit(REFERENCES_MARKER, 1)
-        answer = parts[0].strip()
-        refs = parts[1].strip() if len(parts) == 2 else "[]"
+
+        # Use last match — tolerates marker appearing in the answer prose
+        last = matches[-1]
+        answer = raw[: last.start()].strip()
+        refs = raw[last.end() :].strip()
         # Strip markdown code fences if present
         refs = re.sub(r"^```(?:json)?\s*", "", refs)
         refs = re.sub(r"\s*```$", "", refs).strip()

@@ -36,6 +36,10 @@ class Config:
     # ── Extraction Concurrency ────────────────────────────────────────
     MAX_CONCURRENT_EXTRACTIONS: int = _env_int("MAX_CONCURRENT_EXTRACTIONS", 5)
 
+    # ── Model Context ─────────────────────────────────────────────────
+    OLLAMA_NUM_CTX: int = _env_int("OLLAMA_NUM_CTX", 32768)
+    OLLAMA_NUM_PREDICT: int = _env_int("OLLAMA_NUM_PREDICT", 4096)
+
     # ── Middleware / API ──────────────────────────────────────────────
     MIDDLEWARE_HOST: str = _env("MIDDLEWARE_HOST", "0.0.0.0")
     MIDDLEWARE_PORT: int = _env_int("MIDDLEWARE_PORT", 8000)

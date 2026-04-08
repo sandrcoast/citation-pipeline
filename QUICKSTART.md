@@ -137,6 +137,8 @@ Everything in [config.py](config.py), overridable via env vars:
 | `OLLAMA_URL` | `http://localhost:11434` | Ollama server |
 | `OLLAMA_TIMEOUT_S` | `120` | Per-call timeout |
 | `MAX_CONCURRENT_EXTRACTIONS` | `5` | Parallel Ollama calls |
+| `OLLAMA_NUM_CTX` | `32768` | Model context window (tokens) |
+| `OLLAMA_NUM_PREDICT` | `4096` | Max output tokens |
 | `CHROMA_PERSIST_DIR` | `./data/chromadb` | ChromaDB location |
 | `CHROMA_SOURCES_COLLECTION` | `sources` | Source dedup collection |
 | `CHROMA_CITATIONS_COLLECTION` | `citations` | Per-prompt records collection |
@@ -146,14 +148,10 @@ Everything in [config.py](config.py), overridable via env vars:
 
 | Setting | Value | Notes |
 |---|---|---|
-| Context window (`num_ctx`) | 8 192 tokens | Total capacity for input + output |
-| Output budget (`num_predict`) | 4 096 tokens | Max tokens the model will generate |
+| Context window (`num_ctx`) | 32 768 tokens | Full native capacity; configurable via `OLLAMA_NUM_CTX` |
+| Output budget (`num_predict`) | 4 096 tokens | Max tokens the model will generate; configurable via `OLLAMA_NUM_PREDICT` |
 | System prompt overhead | ~400 tokens | Reserved by the pipeline |
-| **Effective user query budget** | **~3 700 tokens** | ≈ 2 800 words |
-
-Keep prompts under **~2 000 words** to leave comfortable headroom for the
-references JSON block. For longer source documents, summarize or chunk before
-sending. Use `gemma3:4b` or larger if you need more input capacity.
+| **Effective user query budget** | **~28 000 tokens** | ≈ 21 000 words |
 
 > The pipeline uses **text-only** capabilities of the Gemma API.
 > No vision, no multimodal inputs.
