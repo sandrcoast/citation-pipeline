@@ -35,40 +35,76 @@ from core.models import (
     DiscoveryMethod,
     SourceType,
 )
+from core.web_fetch import FetchedPage
 
 logger = logging.getLogger(__name__)
 
 
 REFERENCES_MARKER = "---REFERENCES---"
 
+# Matches plain URLs in a text reference list (e.g. markdown links, bare URLs).
+# Used as a last resort when the model emits a URL list instead of JSON.
+_BARE_URL_RE = re.compile(r"https?://[^\s<>()\[\]\"'`]+", re.IGNORECASE)
 
-SYSTEM_PROMPT = f"""You are an assistant that answers questions AND discloses every source you relied on.
+# Secondary header patterns tolerated when the primary marker is absent.
+# Matches lines like "**REFERENCES:**", "## References", "Sources:", etc.
+# Uses loose [#*]* prefix and [*:]* suffix to handle markdown bold/heading variants.
+_SECONDARY_REF_RE = re.compile(
+    r"(?:^|\n)[ \t]*[#*]*[ \t]*(?:REFERENCES?|Sources?|Bibliography)[*:]*[ \t]*$",
+    re.MULTILINE | re.IGNORECASE,
+)
 
-Output format (STRICT — follow exactly):
 
+SYSTEM_PROMPT = f"""You are a research assistant whose dual obligation is to (1) answer the user's question AND (2) disclose every information source that influenced your answer — including training-data sources when no web sources are available. Treat citations as a first-class deliverable, not an afterthought.
+
+CITATION OBLIGATION (read carefully):
+- If your answer relies on any factual claim — historical, scientific, biographical, technical, legal, mathematical — you MUST cite at least one training-knowledge source for that claim. Foundational papers, standard textbooks, official specifications, peer-reviewed reviews, and authoritative books are preferred over blog posts or news.
+- An empty references array `[]` is permitted ONLY when the answer is purely opinion, creative writing, a refusal, or a trivial restatement of the question. For any factual answer, an empty array is a violation of this contract.
+- Quality bar: when you can identify a source from training memory, populate as many fields as you can — `title`, `authors`, `date`, `publisher`, and `source_type`. Use `confidence` honestly: high (≥0.8) for textbook-grade facts you are certain of, medium (~0.5) for well-known results you remember imprecisely, low (≤0.3) for half-remembered details.
+- DO NOT invent DOIs, URLs, or page numbers. Use null for any field you cannot recall verbatim. A reference with `title + authors + date + null doi` is more valuable than a fabricated DOI.
+- If the user message contains a <fetched_sources> block, treat those pages as AUTHORITATIVE ground truth. Base your answer on their TEXT, and cite them in the references block using their exact URL as the "url" field and the real TITLE from the page. Prefer fetched sources over training knowledge when they conflict. If a fetched source has [fetch failed: ...] instead of TEXT, do not invent content for it. You may still add training-knowledge citations alongside fetched sources when they support additional claims in your answer.
+
+OUTPUT STRUCTURE:
 1. First, write your complete natural-language answer to the user's question.
-2. Then, on a new line, write the literal marker: {REFERENCES_MARKER}
-3. Then, output a JSON array listing EVERY source that informed your answer.
-   Include training-knowledge sources (papers, books, standards) even if you
-   did not browse the web.
+2. Then, on a new line by itself, write the literal marker: {REFERENCES_MARKER}
+3. Then, output a single JSON array listing EVERY source that informed your answer.
 
-Each JSON item must have these fields (use null for unknown):
+Each JSON item has these fields (use null for unknown — never omit a field):
 - "title": title of the referenced work
 - "authors": array of author names (Last, First Initial format)
 - "date": publication year or full date
 - "source_type": one of: journal_article, book, book_chapter, conference_paper, thesis, preprint, academic_url, institutional_report, blog_nonacademic, news_article, dataset, standard_spec, unknown
 - "citation_style": one of: APA, MLA, Chicago, IEEE, Vancouver, Harvard, unknown
 - "publisher": journal, publisher, or conference
-- "doi": DOI if known (without https://doi.org/ prefix)
-- "url": access URL if known
+- "doi": DOI if known (without https://doi.org/ prefix), else null
+- "url": access URL if known, else null
 - "raw_fragment": a short verbatim citation-style string, max 300 chars
 - "confidence": 0.0-1.0 your confidence in this reference
 
-Rules:
-- The marker {REFERENCES_MARKER} must appear EXACTLY ONCE, after the full answer.
-- The references block must be a JSON array. No prose, no markdown fences.
-- If you used no external sources, output an empty array: []
-- Do not invent sources. If unsure, omit or mark confidence low."""
+WORKED EXAMPLE A — non-URL question answered from training knowledge:
+
+User: who proved Fermat's Last Theorem and when?
+Andrew Wiles proved Fermat's Last Theorem in 1994, with a key gap in his original 1993 announcement closed in collaboration with Richard Taylor. The proof relies on the modularity theorem for semistable elliptic curves.
+{REFERENCES_MARKER}
+[
+  {{"title": "Modular elliptic curves and Fermat's Last Theorem", "authors": ["Wiles, A."], "date": "1995", "source_type": "journal_article", "citation_style": "APA", "publisher": "Annals of Mathematics", "doi": "10.2307/2118559", "url": null, "raw_fragment": "Wiles, A. (1995). Modular elliptic curves and Fermat's Last Theorem. Annals of Mathematics, 141(3), 443-551.", "confidence": 0.95}},
+  {{"title": "Ring-theoretic properties of certain Hecke algebras", "authors": ["Taylor, R.", "Wiles, A."], "date": "1995", "source_type": "journal_article", "citation_style": "APA", "publisher": "Annals of Mathematics", "doi": "10.2307/2118560", "url": null, "raw_fragment": "Taylor, R., & Wiles, A. (1995). Ring-theoretic properties of certain Hecke algebras. Annals of Mathematics, 141(3), 553-572.", "confidence": 0.9}}
+]
+
+WORKED EXAMPLE B — question with a fetched source:
+
+User: <fetched_sources block with one arxiv paper> ... what does this paper conclude?
+This paper computes nuclear matrix elements for neutrinoless double-beta decay using lattice QCD and finds that the contact term contributes significantly to the decay rate.
+{REFERENCES_MARKER}
+[
+  {{"title": "Nuclear Matrix Elements for Neutrinoless Double-Beta Decay", "authors": ["Grebe, A. V."], "date": "2025", "source_type": "preprint", "citation_style": "APA", "publisher": "arXiv", "doi": null, "url": "https://arxiv.org/html/2504.00358v2", "raw_fragment": "Grebe, A. V. (2025). Nuclear Matrix Elements for Neutrinoless Double-Beta Decay. arXiv:2504.00358v2.", "confidence": 1.0}}
+]
+
+STRICT FORMAT (the parser depends on these — violations cause data loss):
+- The marker {REFERENCES_MARKER} must appear EXACTLY ONCE, on its own line, after the full answer.
+- The references block must be a single JSON array `[...]`. No prose before or after the array. No markdown code fences (no ```json). No trailing commentary.
+- Every object must include all fields listed above; use null for unknowns rather than omitting keys.
+- For factual answers, the array MUST contain at least one item. Empty arrays are reserved for non-factual answers only."""
 
 
 @dataclass
@@ -92,18 +128,71 @@ class CitationExtractor:
         self,
         user_prompt: str,
         prompt_id: str,
+        fetched_pages: Optional[list[FetchedPage]] = None,
     ) -> tuple[str, list[CitationRecord]]:
         """
         Single Ollama call. Returns (answer_text, citation_records).
         Records have empty source_id — populated later by store.reconcile_sources.
+
+        If fetched_pages is provided, their content is injected into the prompt
+        as a <fetched_sources> block for the model to cite authoritatively.
         """
-        raw = await self._call_ollama(user_prompt)
+        enriched = self._build_enriched_prompt(user_prompt, fetched_pages)
+        raw = await self._call_ollama(enriched)
         if not raw:
             return ("", [])
 
         answer, refs_json = self._split_output(raw)
         records = self._parse_references(refs_json, prompt_id)
         return (answer, records)
+
+    # ── Prompt enrichment ─────────────────────────────────────────────
+
+    @staticmethod
+    def _build_enriched_prompt(
+        user_prompt: str, fetched_pages: Optional[list[FetchedPage]]
+    ) -> str:
+        if not fetched_pages:
+            return user_prompt
+        # Inline the full system prompt at the top of the user message when
+        # fetched sources are present. Small models (gemma3:1b) attend weakly
+        # to Ollama's `system` field once a large <fetched_sources> block
+        # dominates context — co-locating the contract with the content
+        # restores the citation obligation. The `system` field is still sent
+        # via _call_ollama; this is belt-and-suspenders.
+        lines: list[str] = [
+            "=== INSTRUCTIONS (read before answering) ===",
+            SYSTEM_PROMPT,
+            "=== END INSTRUCTIONS ===",
+            "",
+            "<fetched_sources>",
+        ]
+        for i, page in enumerate(fetched_pages, start=1):
+            lines.append(f"[{i}] URL: {page.final_url or page.url}")
+            if page.title:
+                lines.append(f"    TITLE: {page.title}")
+            if page.ok:
+                lines.append("    TEXT:")
+                for ln in page.text.splitlines():
+                    lines.append(f"    {ln}")
+            else:
+                lines.append(f"    [fetch failed: {page.failure_reason}]")
+            lines.append("")
+        lines.append("</fetched_sources>")
+        lines.append("")
+        lines.append("USER QUESTION:")
+        lines.append(user_prompt)
+        lines.append("")
+        lines.append(
+            "REMINDER (citation contract): keep your answer focused and concise so the "
+            f"references block fits. After your answer, on a new line by itself, write "
+            f"the literal marker {REFERENCES_MARKER} and then a single JSON array. The "
+            "array MUST contain one entry for EACH fetched source above that informed "
+            "your answer — use its exact URL as the \"url\" field and the page TITLE "
+            "as the \"title\". Add training-knowledge citations only after the fetched "
+            "ones. Do not skip the marker. Do not output an empty array."
+        )
+        return "\n".join(lines)
 
     # ── Ollama call ───────────────────────────────────────────────────
 
@@ -145,6 +234,9 @@ class CitationExtractor:
         Requires the marker to appear at the start of a line — prevents false
         splits when a small model echoes the system prompt inline
         (e.g. "write the literal marker: ---REFERENCES---").
+
+        Falls back to secondary markdown headers (e.g. "**REFERENCES:**",
+        "## References") when the primary marker is absent.
         Returns (raw, "[]") on malformed output — graceful degradation.
         """
         # Match marker only at start of a line (or at start of string)
@@ -153,6 +245,16 @@ class CitationExtractor:
         )
         matches = list(pattern.finditer(raw))
         if not matches:
+            # Secondary: tolerate common markdown reference-section headers
+            sec_matches = list(_SECONDARY_REF_RE.finditer(raw))
+            if sec_matches:
+                logger.debug("Primary marker missing; split on secondary reference header")
+                last = sec_matches[-1]
+                answer = raw[: last.start()].strip()
+                refs = raw[last.end() :].strip()
+                refs = re.sub(r"^```(?:json)?\s*", "", refs)
+                refs = re.sub(r"\s*```$", "", refs).strip()
+                return (answer, refs or "[]")
             return (raw.strip(), "[]")
 
         # Use last match — tolerates marker appearing in the answer prose
@@ -192,7 +294,7 @@ class CitationExtractor:
                 items = self._salvage_json_objects(refs_json)
 
         if not items or not isinstance(items, list):
-            return []
+            return self._url_list_fallback(refs_json, prompt_id)
 
         records: list[CitationRecord] = []
         seen_cids: set[str] = set()
@@ -252,6 +354,37 @@ class CitationExtractor:
         except Exception as e:
             logger.debug(f"Skipping malformed citation item: {e}")
             return None
+
+    @staticmethod
+    def _url_list_fallback(text: str, prompt_id: str) -> list[CitationRecord]:
+        """
+        Last-resort extraction when the LLM emitted a plain-text or markdown URL
+        list instead of a JSON array. Produces minimal CitationRecords (URL only,
+        low confidence) so the sources are at least tracked in ChromaDB.
+        """
+        urls = list(dict.fromkeys(_BARE_URL_RE.findall(text)))  # dedup, order-preserving
+        if not urls:
+            return []
+        records: list[CitationRecord] = []
+        seen_cids: set[str] = set()
+        for url in urls:
+            try:
+                rec = CitationRecord(
+                    title=url,
+                    source_type=SourceType.UNKNOWN,
+                    authors=[],
+                    access_url=url,
+                    discovery_method=DiscoveryMethod.LLM_KNOWLEDGE,
+                    confidence=0.3,
+                    prompt_id=prompt_id,
+                )
+                if rec.cid not in seen_cids:
+                    seen_cids.add(rec.cid)
+                    records.append(rec)
+            except Exception as e:
+                logger.debug(f"URL fallback record failed for {url!r}: {e}")
+        logger.debug(f"URL-list fallback produced {len(records)} citation record(s)")
+        return records
 
     @staticmethod
     def _salvage_json_objects(text: str) -> list[dict]:

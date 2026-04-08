@@ -24,10 +24,6 @@ def _env_int(key: str, default: int) -> int:
 class Config:
     # ── Model ─────────────────────────────────────────────────────────
     OLLAMA_MODEL: str = _env("OLLAMA_MODEL", "gemma3:1b")
-    OLLAMA_CITE_MODEL: str = _env(
-        "OLLAMA_CITE_MODEL",
-        _env("OLLAMA_MODEL", "gemma3:1b").replace(":", "-") + "-cite",
-    )
 
     # ── Ollama Connection ─────────────────────────────────────────────
     OLLAMA_URL: str = _env("OLLAMA_URL", "http://localhost:11434")
@@ -40,15 +36,19 @@ class Config:
     OLLAMA_NUM_CTX: int = _env_int("OLLAMA_NUM_CTX", 32768)
     OLLAMA_NUM_PREDICT: int = _env_int("OLLAMA_NUM_PREDICT", 4096)
 
-    # ── Middleware / API ──────────────────────────────────────────────
-    MIDDLEWARE_HOST: str = _env("MIDDLEWARE_HOST", "0.0.0.0")
-    MIDDLEWARE_PORT: int = _env_int("MIDDLEWARE_PORT", 8000)
-    MIDDLEWARE_WORKERS: int = _env_int("MIDDLEWARE_WORKERS", 4)
-
     # ── Storage — ChromaDB ────────────────────────────────────────────
     CHROMA_PERSIST_DIR: str = _env("CHROMA_PERSIST_DIR", str(_HERE / "data" / "chromadb"))
     CHROMA_SOURCES_COLLECTION: str = _env("CHROMA_SOURCES_COLLECTION", "sources")
     CHROMA_CITATIONS_COLLECTION: str = _env("CHROMA_CITATIONS_COLLECTION", "citations")
+
+    # ── Web Fetch (web branch) ────────────────────────────────────────
+    WEB_FETCH_ENABLED: bool = _env("WEB_FETCH_ENABLED", "true").lower() == "true"
+    WEB_FETCH_TIMEOUT_S: int = _env_int("WEB_FETCH_TIMEOUT_S", 15)
+    WEB_FETCH_MAX_URLS: int = _env_int("WEB_FETCH_MAX_URLS", 3)
+    WEB_FETCH_MAX_BYTES: int = _env_int("WEB_FETCH_MAX_BYTES", 2_000_000)
+    WEB_FETCH_MAX_CHARS_PER_PAGE: int = _env_int("WEB_FETCH_MAX_CHARS_PER_PAGE", 60_000)
+    WEB_FETCH_CONCURRENCY: int = _env_int("WEB_FETCH_CONCURRENCY", 3)
+    WEB_FETCH_USER_AGENT: str = _env("WEB_FETCH_USER_AGENT", "citation-pipeline/0.3 (+local)")
 
 
 cfg = Config()
