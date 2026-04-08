@@ -112,6 +112,8 @@ Response shape:
   "model": "gemma3:1b",
   "response": "Attention mechanisms allow neural networks to...",
   "_prompt_id": "a1b2c3d4-...",
+  "_total_ms": 8421,
+  "citation_records_count": 1,
   "citation_metadata": {
     "schema": "citation_extraction",
     "version": "1.0",
@@ -179,6 +181,7 @@ default to `[]` — graceful degradation.
 
 ```
 citation-pipeline/
+├── app.py                    Interactive REPL client (stdlib only, optional)
 ├── config.py                 Ollama + ChromaDB + web-fetch settings (single source of truth)
 ├── core/
 │   ├── models.py             CitationRecord, Source, compute_source_id, A2A views
@@ -188,5 +191,6 @@ citation-pipeline/
 │   └── proxy.py              FastAPI endpoints + inline reconcile flow
 ├── storage/
 │   └── store.py              ChromaDB store with two collections + reconcile
+├── results/                  REPL persists full JSON responses here (created on demand)
 └── requirements.txt          fastapi, uvicorn, aiohttp, chromadb, pydantic, playwright
 ```

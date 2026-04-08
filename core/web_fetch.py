@@ -216,6 +216,23 @@ def _extract_article_references(html: str) -> list[dict]:
     """
     refs: list[dict] = []
 
+    # arxiv / LaTeXML pattern: <li class="ltx_bibitem" id="bib.bibN">...</li>
+    arxiv_items = re.findall(
+        r'<li[^>]*class="[^"]*ltx_bibitem[^"]*"[^>]*>(.*?)</li>',
+        html, re.DOTALL | re.IGNORECASE,
+    )
+    if arxiv_items:
+        for item in arxiv_items:
+            raw = re.sub(r"<[^>]+>", " ", item)
+            raw = html_unescape(re.sub(r"\s+", " ", raw).strip())
+            doi = None
+            doi_m = re.search(r'doi\.org/([^\s"<>]+)', item, re.IGNORECASE)
+            if doi_m:
+                doi = doi_m.group(1).rstrip('.,;:)"\'')
+            if raw:
+                refs.append({"raw": raw[:500], "doi": doi})
+        return refs[:100]
+
     # Nature pattern: <li data-counter="N">...<p class="c-article-references__text">
     items = re.findall(
         r'<li[^>]*data-counter[^>]*>(.*?)</li>',
@@ -406,9 +423,17 @@ async def fetch_all(urls: list[str]) -> list[FetchedPage]:
         async with sem:
             async with aiohttp.ClientSession() as session:
                 page = await fetch_url(session, u)
-            # Fall back to Playwright when body text was JS-rendered
-            if page.status == 200 and page.js_rendered:
-                logger.info(f"aiohttp got JS-rendered page for {u} — retrying with Playwright")
+            # Fall back to Playwright when body is empty OR suspiciously sparse
+            # (arxiv/html, some publishers serve stub HTML to non-browser UAs)
+            sparse = (
+                page.status == 200
+                and not page.js_rendered
+                and len(page.text) < 3000
+                and not (page.meta or {}).get("references")
+            )
+            if page.status == 200 and (page.js_rendered or sparse):
+                reason = "JS-rendered" if page.js_rendered else f"sparse body ({len(page.text)} chars)"
+                logger.info(f"aiohttp {reason} for {u} — retrying with Playwright")
                 page = await fetch_url_playwright(u)
             return page
 

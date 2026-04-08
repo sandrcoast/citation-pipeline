@@ -20,6 +20,7 @@ uvicorn middleware.proxy:app --host 0.0.0.0 --port 8000
 
 ## Project Structure
 
+- `app.py` — Interactive REPL client. Stateless thin wrapper over curl; does not manage server/venv/git.
 - `config.py` — All settings. Single source of truth for Ollama + ChromaDB + web-fetch config.
 - `core/models.py` — Data models. Change the schema here; all views update automatically.
 - `core/extractor.py` — Single-call Ollama extractor + output parser.

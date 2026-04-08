@@ -125,6 +125,72 @@ for i, meta in enumerate(result['metadatas']):
 
 Both commands run against the embedded ChromaDB at `./data/chromadb/` — no server needed.
 
+## Step 7: Interactive REPL (optional)
+
+If crafting curl commands by hand gets tedious, use the bundled REPL client:
+
+```bash
+python app.py
+```
+
+It prints a short banner, shows current settings, and waits for your prompt.
+The client builds the JSON body, **prints the exact curl command** it is about
+to execute, runs it, and prints a **trimmed summary** plus the **first 3
+citation records**. The complete JSON response (including the full citation
+list) is saved to `results/<timestamp>_<slug>.json` so the terminal stays
+readable.
+
+```
+Citation Pipeline REPL
+Middleware: http://localhost:8000   Model: gemma3:1b   Citations: on
+Type your prompt and press Enter. Press Ctrl+C to exit.
+Type /help for shortcuts.
+
+> what are references in https://arxiv.org/html/2504.00358v2
+
+$ curl -s -X POST http://localhost:8000/api/generate -H ... -d '{...}'
+
+{
+  "model": "gemma3:1b",
+  "response": "...",
+  "_prompt_id": "...",
+  "_total_ms": 4077,
+  "citation_records_count": 12,
+  "_fetched_sources": [ ... ]
+}
+
+--- first 3 citation records ---
+[ {...}, {...}, {...} ]
+
+Full collection of citation records is available in following file in results/260408_201500_arxiv.orghtml25.json
+```
+
+The slug in the filename is built from the first URL in the prompt (scheme
+stripped, special chars removed, first 15 chars), or from the prompt text
+itself if no URL is present.
+
+Shortcuts (prefix `/`):
+
+| Shortcut | Effect |
+|---|---|
+| `/help` | print shortcut + inline-flag reference |
+| `/status` | show current url / model / citations |
+| `/citations on\|off` | toggle the citations flag |
+| `/model <name>` | change model |
+| `/url <base>` | change middleware base URL |
+| `/quit` | exit (aliases: `/q`, `/exit`) |
+
+Inline per-request flags (appended to the prompt, stripped before sending):
+
+- `--citations:y|n`, `--cit:y|n`, `-cit:y|n` — override citations for one request.
+
+Example: `summarize https://example.com --cit:n` sends the prompt with citations
+disabled regardless of the session default.
+
+The REPL is a thin stateless client — it does **not** manage the venv, start
+the uvicorn server, touch git, or install Playwright. Start the middleware
+first (Step 5), then launch the REPL in another terminal.
+
 ## What happens under the hood (citations=true)
 
 1. Middleware extracts any URLs from the prompt and fetches them (aiohttp fast path;
@@ -142,8 +208,8 @@ Both commands run against the embedded ChromaDB at `./data/chromadb/` — no ser
 8. Looks up `source_id`s in the ChromaDB `sources` collection. Marks
    existing ones as `source_cached=true`; inserts new ones.
 9. Upserts all records into the ChromaDB `citations` collection.
-10. Returns the response with `citation_metadata`, `citation_user`, and
-    `_fetched_sources` attached.
+10. Returns the response with `citation_records_count`, `citation_metadata`,
+    `citation_user`, and `_fetched_sources` attached.
 
 All of that is inline — no background tasks. The response you receive is
 guaranteed to match what's in ChromaDB.
@@ -196,6 +262,7 @@ Everything in [config.py](config.py), overridable via env vars:
 
 ```
 citation-pipeline/
+├── app.py                    ← interactive REPL client (optional)
 ├── config.py                 ← all settings
 ├── core/
 │   ├── extractor.py          ← single Ollama call + output parser
