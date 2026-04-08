@@ -1,20 +1,22 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2025 Citation Pipeline Contributors
 """
-core/extractor.py — Single-call citation extractor.
+core/extractor.py — Two-call citation extractor.
 
-One Ollama call produces both the natural-language answer and a JSON
-references block. No web search, no fetching, no PDF parsing — the LLM
-is the source of truth for which references it used to compose the answer.
+Call 1 — /api/generate, temperature=TEMPERATURE_USER_PROMPT (default 0.6):
+    Prose answer only. System prompt instructs the model to answer without
+    emitting any references block — that keeps call 1 focused and avoids
+    spending output budget on structured JSON that would be produced at a
+    higher temperature anyway.
 
-Output format (Option C — trailing JSON block):
+Call 2 — /api/chat, temperature=TEMPERATURE_CITATION_SYSTEM_PROMPT (default 0.0):
+    Citation extraction. Sends the full three-message history
+    [user: enriched_prompt | assistant: answer | user: citation request]
+    and receives the structured ---REFERENCES--- JSON block at temperature 0.
+    Deterministic extraction over the model's own answer text.
 
-    <free-form answer prose>
-    ---REFERENCES---
-    [{"title": ..., "authors": [...], "date": ..., ...}, ...]
-
-If the marker is missing, references default to [] and the whole response
-is returned as the answer (graceful degradation).
+No web search, no fetching, no PDF parsing — the LLM is the source of truth
+for which references it used to compose the answer.
 """
 
 from __future__ import annotations
@@ -55,56 +57,56 @@ _SECONDARY_REF_RE = re.compile(
 )
 
 
-SYSTEM_PROMPT = f"""You are a research assistant whose dual obligation is to (1) answer the user's question AND (2) disclose every information source that influenced your answer — including training-data sources when no web sources are available. Treat citations as a first-class deliverable, not an afterthought.
+# ── System prompt for call 1 (prose answer) ──────────────────────────────
+ANSWER_SYSTEM_PROMPT = """You are a research assistant. Answer the user's question clearly and concisely.
+If a <fetched_sources> block is provided, base your answer on the content of those pages — treat them as authoritative ground truth. Prefer fetched content over training knowledge when they conflict.
+Do NOT output any references, citations, or a ---REFERENCES--- block. A separate citation step will handle that."""
 
-CITATION OBLIGATION (read carefully):
-- If your answer relies on any factual claim — historical, scientific, biographical, technical, legal, mathematical — you MUST cite at least one training-knowledge source for that claim. Foundational papers, standard textbooks, official specifications, peer-reviewed reviews, and authoritative books are preferred over blog posts or news.
-- An empty references array `[]` is permitted ONLY when the answer is purely opinion, creative writing, a refusal, or a trivial restatement of the question. For any factual answer, an empty array is a violation of this contract.
-- Quality bar: when you can identify a source from training memory, populate as many fields as you can — `title`, `authors`, `date`, `publisher`, and `source_type`. Use `confidence` honestly: high (≥0.8) for textbook-grade facts you are certain of, medium (~0.5) for well-known results you remember imprecisely, low (≤0.3) for half-remembered details.
-- DO NOT invent DOIs, URLs, or page numbers. Use null for any field you cannot recall verbatim. A reference with `title + authors + date + null doi` is more valuable than a fabricated DOI.
-- If the user message contains a <fetched_sources> block, treat those pages as AUTHORITATIVE ground truth. Base your answer on their TEXT, and cite them in the references block using their exact URL as the "url" field and the real TITLE from the page. Prefer fetched sources over training knowledge when they conflict. If a fetched source has [fetch failed: ...] instead of TEXT, do not invent content for it. You may still add training-knowledge citations alongside fetched sources when they support additional claims in your answer.
 
-OUTPUT STRUCTURE:
-1. First, write your complete natural-language answer to the user's question.
-2. Then, on a new line by itself, write the literal marker: {REFERENCES_MARKER}
-3. Then, output a single JSON array listing EVERY source that informed your answer.
+# ── System prompt for call 2 (citation extraction) ───────────────────────
+CITATION_SYSTEM_PROMPT = f"""You are a citation extraction assistant. Your sole job is to produce a structured JSON references array for the answer that was just given.
 
-Each JSON item has these fields (use null for unknown — never omit a field):
+OUTPUT FORMAT (the parser depends on these — violations cause data loss):
+1. On its own line, write the literal marker: {REFERENCES_MARKER}
+2. Then a single JSON array `[...]`. No prose before or after. No markdown code fences. No trailing commentary.
+
+Each JSON object must include ALL of the following fields (use null for unknowns — never omit a field):
 - "title": title of the referenced work
 - "authors": array of author names (Last, First Initial format)
 - "date": publication year or full date
 - "source_type": one of: journal_article, book, book_chapter, conference_paper, thesis, preprint, academic_url, institutional_report, blog_nonacademic, news_article, dataset, standard_spec, unknown
 - "citation_style": one of: APA, MLA, Chicago, IEEE, Vancouver, Harvard, unknown
-- "publisher": journal, publisher, or conference
+- "publisher": journal, publisher, or conference name
 - "doi": DOI if known (without https://doi.org/ prefix), else null
 - "url": access URL if known, else null
-- "raw_fragment": a short verbatim citation-style string, max 300 chars
-- "confidence": 0.0-1.0 your confidence in this reference
+- "raw_fragment": short verbatim citation-style string, max 300 chars
+- "confidence": 0.0–1.0 confidence in this reference
 
-WORKED EXAMPLE A — non-URL question answered from training knowledge:
+CITATION RULES:
+- If the original question contained a <fetched_sources> block, include one entry per fetched URL that informed the answer, using the exact URL and page title from the block.
+- For factual answers, the array MUST contain at least one item. An empty array is only valid for opinion, creative, or trivial restatement answers.
+- DO NOT invent DOIs, URLs, or page numbers. Use null for any field you cannot confirm.
+- Quality bar: populate as many fields as possible — title + authors + date + null doi is more valuable than a fabricated DOI.
 
-User: who proved Fermat's Last Theorem and when?
-Andrew Wiles proved Fermat's Last Theorem in 1994, with a key gap in his original 1993 announcement closed in collaboration with Richard Taylor. The proof relies on the modularity theorem for semistable elliptic curves.
+WORKED EXAMPLE A — training-knowledge answer:
 {REFERENCES_MARKER}
 [
-  {{"title": "Modular elliptic curves and Fermat's Last Theorem", "authors": ["Wiles, A."], "date": "1995", "source_type": "journal_article", "citation_style": "APA", "publisher": "Annals of Mathematics", "doi": "10.2307/2118559", "url": null, "raw_fragment": "Wiles, A. (1995). Modular elliptic curves and Fermat's Last Theorem. Annals of Mathematics, 141(3), 443-551.", "confidence": 0.95}},
-  {{"title": "Ring-theoretic properties of certain Hecke algebras", "authors": ["Taylor, R.", "Wiles, A."], "date": "1995", "source_type": "journal_article", "citation_style": "APA", "publisher": "Annals of Mathematics", "doi": "10.2307/2118560", "url": null, "raw_fragment": "Taylor, R., & Wiles, A. (1995). Ring-theoretic properties of certain Hecke algebras. Annals of Mathematics, 141(3), 553-572.", "confidence": 0.9}}
+  {{"title": "Modular elliptic curves and Fermat's Last Theorem", "authors": ["Wiles, A."], "date": "1995", "source_type": "journal_article", "citation_style": "APA", "publisher": "Annals of Mathematics", "doi": "10.2307/2118559", "url": null, "raw_fragment": "Wiles, A. (1995). Annals of Mathematics, 141(3), 443-551.", "confidence": 0.95}}
 ]
 
-WORKED EXAMPLE B — question with a fetched source:
-
-User: <fetched_sources block with one arxiv paper> ... what does this paper conclude?
-This paper computes nuclear matrix elements for neutrinoless double-beta decay using lattice QCD and finds that the contact term contributes significantly to the decay rate.
+WORKED EXAMPLE B — fetched-source answer:
 {REFERENCES_MARKER}
 [
-  {{"title": "Nuclear Matrix Elements for Neutrinoless Double-Beta Decay", "authors": ["Grebe, A. V."], "date": "2025", "source_type": "preprint", "citation_style": "APA", "publisher": "arXiv", "doi": null, "url": "https://arxiv.org/html/2504.00358v2", "raw_fragment": "Grebe, A. V. (2025). Nuclear Matrix Elements for Neutrinoless Double-Beta Decay. arXiv:2504.00358v2.", "confidence": 1.0}}
-]
+  {{"title": "Nuclear Matrix Elements for Neutrinoless Double-Beta Decay", "authors": ["Grebe, A. V."], "date": "2025", "source_type": "preprint", "citation_style": "APA", "publisher": "arXiv", "doi": null, "url": "https://arxiv.org/html/2504.00358v2", "raw_fragment": "Grebe, A. V. (2025). arXiv:2504.00358v2.", "confidence": 1.0}}
+]"""
 
-STRICT FORMAT (the parser depends on these — violations cause data loss):
-- The marker {REFERENCES_MARKER} must appear EXACTLY ONCE, on its own line, after the full answer.
-- The references block must be a single JSON array `[...]`. No prose before or after the array. No markdown code fences (no ```json). No trailing commentary.
-- Every object must include all fields listed above; use null for unknowns rather than omitting keys.
-- For factual answers, the array MUST contain at least one item. Empty arrays are reserved for non-factual answers only."""
+
+# ── Citation request message (final user turn in call 2) ─────────────────
+CITATION_REQUEST_MSG = (
+    f"Based on your answer above, produce ONLY the structured citation references. "
+    f"Start with the literal marker {REFERENCES_MARKER} on its own line, "
+    f"then a single JSON array. No prose, no markdown fences."
+)
 
 
 @dataclass
@@ -115,10 +117,12 @@ class ExtractorConfig:
     timeout_s: int = cfg.OLLAMA_TIMEOUT_S
     num_ctx: int = cfg.OLLAMA_NUM_CTX
     num_predict: int = cfg.OLLAMA_NUM_PREDICT
+    temperature_user: float = cfg.TEMPERATURE_USER_PROMPT
+    temperature_citation: float = cfg.TEMPERATURE_CITATION_SYSTEM_PROMPT
 
 
 class CitationExtractor:
-    """Single-call answer+references extractor."""
+    """Two-call answer+citations extractor."""
 
     def __init__(self, config: Optional[ExtractorConfig] = None):
         self.config = config or ExtractorConfig()
@@ -131,18 +135,22 @@ class CitationExtractor:
         fetched_pages: Optional[list[FetchedPage]] = None,
     ) -> tuple[str, list[CitationRecord]]:
         """
-        Single Ollama call. Returns (answer_text, citation_records).
+        Two Ollama calls. Returns (answer_text, citation_records).
+        Call 1: prose answer at temperature_user via /api/generate.
+        Call 2: citation JSON via /api/chat with full message history at temperature_citation.
         Records have empty source_id — populated later by store.reconcile_sources.
-
-        If fetched_pages is provided, their content is injected into the prompt
-        as a <fetched_sources> block for the model to cite authoritatively.
         """
         enriched = self._build_enriched_prompt(user_prompt, fetched_pages)
-        raw = await self._call_ollama(enriched)
-        if not raw:
+
+        answer = await self._call_answer(enriched)
+        if not answer:
             return ("", [])
 
-        answer, refs_json = self._split_output(raw)
+        refs_raw = await self._call_citations(user_prompt, answer, fetched_pages)
+        if not refs_raw:
+            return (answer, [])
+
+        _, refs_json = self._split_output(refs_raw)
         records = self._parse_references(refs_json, prompt_id)
         return (answer, records)
 
@@ -152,21 +160,10 @@ class CitationExtractor:
     def _build_enriched_prompt(
         user_prompt: str, fetched_pages: Optional[list[FetchedPage]]
     ) -> str:
+        """Inject fetched page text as <fetched_sources> context for call 1."""
         if not fetched_pages:
             return user_prompt
-        # Inline the full system prompt at the top of the user message when
-        # fetched sources are present. Small models (gemma3:1b) attend weakly
-        # to Ollama's `system` field once a large <fetched_sources> block
-        # dominates context — co-locating the contract with the content
-        # restores the citation obligation. The `system` field is still sent
-        # via _call_ollama; this is belt-and-suspenders.
-        lines: list[str] = [
-            "=== INSTRUCTIONS (read before answering) ===",
-            SYSTEM_PROMPT,
-            "=== END INSTRUCTIONS ===",
-            "",
-            "<fetched_sources>",
-        ]
+        lines: list[str] = ["<fetched_sources>"]
         for i, page in enumerate(fetched_pages, start=1):
             lines.append(f"[{i}] URL: {page.final_url or page.url}")
             if page.title:
@@ -180,30 +177,39 @@ class CitationExtractor:
             lines.append("")
         lines.append("</fetched_sources>")
         lines.append("")
-        lines.append("USER QUESTION:")
         lines.append(user_prompt)
-        lines.append("")
-        lines.append(
-            "REMINDER (citation contract): keep your answer focused and concise so the "
-            f"references block fits. After your answer, on a new line by itself, write "
-            f"the literal marker {REFERENCES_MARKER} and then a single JSON array. The "
-            "array MUST contain one entry for EACH fetched source above that informed "
-            "your answer — use its exact URL as the \"url\" field and the page TITLE "
-            "as the \"title\". Add training-knowledge citations only after the fetched "
-            "ones. Do not skip the marker. Do not output an empty array."
-        )
         return "\n".join(lines)
 
-    # ── Ollama call ───────────────────────────────────────────────────
+    # ── Prompt builders ───────────────────────────────────────────────
 
-    async def _call_ollama(self, user_prompt: str) -> Optional[str]:
+    @staticmethod
+    def _build_lean_context(
+        user_prompt: str, fetched_pages: Optional[list[FetchedPage]]
+    ) -> str:
+        """Compact context for call 2: original prompt + fetched URL/title pairs only.
+        Avoids re-sending full page text so call 2 stays well within num_ctx."""
+        if not fetched_pages:
+            return user_prompt
+        lines = [user_prompt, "", "Sources consulted:"]
+        for i, page in enumerate(fetched_pages, start=1):
+            url = page.final_url or page.url
+            label = f"[{i}] {url}"
+            if page.title:
+                label += f" — {page.title}"
+            lines.append(label)
+        return "\n".join(lines)
+
+    # ── Ollama calls ──────────────────────────────────────────────────
+
+    async def _call_answer(self, enriched_prompt: str) -> Optional[str]:
+        """Call 1 — prose answer only, /api/generate, temperature_user."""
         payload = {
             "model": self.config.model,
-            "system": SYSTEM_PROMPT,
-            "prompt": user_prompt,
+            "system": ANSWER_SYSTEM_PROMPT,
+            "prompt": enriched_prompt,
             "stream": False,
             "options": {
-                "temperature": 0.0,
+                "temperature": self.config.temperature_user,
                 "num_ctx": self.config.num_ctx,
                 "num_predict": self.config.num_predict,
             },
@@ -217,12 +223,57 @@ class CitationExtractor:
                         timeout=aiohttp.ClientTimeout(total=self.config.timeout_s),
                     ) as resp:
                         if resp.status != 200:
-                            logger.error(f"Ollama returned {resp.status}")
+                            logger.error(f"Ollama answer call returned {resp.status}")
                             return None
                         data = await resp.json()
                         return data.get("response", "") or None
             except Exception as e:
-                logger.error(f"Ollama call failed: {e}")
+                logger.error(f"Ollama answer call failed: {e}")
+                return None
+
+    async def _call_citations(
+        self,
+        user_prompt: str,
+        answer: str,
+        fetched_pages: Optional[list[FetchedPage]] = None,
+    ) -> Optional[str]:
+        """Call 2 — citation JSON, /api/chat with full history, temperature_citation.
+
+        Uses a lean context for messages[0] (URL+title only, not full page text) to
+        keep call 2 well within the model's context window.
+        """
+        lean_ctx = self._build_lean_context(user_prompt, fetched_pages)
+        messages = [
+            {"role": "user", "content": lean_ctx},
+            {"role": "assistant", "content": answer},
+            {"role": "user", "content": CITATION_REQUEST_MSG},
+        ]
+        payload = {
+            "model": self.config.model,
+            "system": CITATION_SYSTEM_PROMPT,
+            "messages": messages,
+            "stream": False,
+            "options": {
+                "temperature": self.config.temperature_citation,
+                "num_ctx": self.config.num_ctx,
+                "num_predict": self.config.num_predict,
+            },
+        }
+        async with self._sem:
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(
+                        f"{self.config.ollama_url}/api/chat",
+                        json=payload,
+                        timeout=aiohttp.ClientTimeout(total=self.config.timeout_s),
+                    ) as resp:
+                        if resp.status != 200:
+                            logger.error(f"Ollama citations call returned {resp.status}")
+                            return None
+                        data = await resp.json()
+                        return (data.get("message") or {}).get("content", "") or None
+            except Exception as e:
+                logger.error(f"Ollama citations call failed: {e}")
                 return None
 
     # ── Output splitting ──────────────────────────────────────────────
@@ -255,6 +306,14 @@ class CitationExtractor:
                 refs = re.sub(r"^```(?:json)?\s*", "", refs)
                 refs = re.sub(r"\s*```$", "", refs).strip()
                 return (answer, refs or "[]")
+            # Tertiary: if the whole output looks like a JSON array/object (call 2
+            # sometimes emits bare JSON with no marker), treat it as the refs block.
+            stripped = raw.strip()
+            stripped = re.sub(r"^```(?:json)?\s*", "", stripped)
+            stripped = re.sub(r"\s*```$", "", stripped).strip()
+            if stripped.startswith("[") or stripped.startswith("{"):
+                logger.debug("No marker found but output looks like JSON; treating as refs block")
+                return ("", stripped)
             return (raw.strip(), "[]")
 
         # Use last match — tolerates marker appearing in the answer prose

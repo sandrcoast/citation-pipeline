@@ -36,6 +36,12 @@ class Config:
     OLLAMA_NUM_CTX: int = _env_int("OLLAMA_NUM_CTX", 32768)
     OLLAMA_NUM_PREDICT: int = _env_int("OLLAMA_NUM_PREDICT", 4096)
 
+    # ── Generation Temperatures ───────────────────────────────────────
+    # Call 1 — prose answer (creative, conversational)
+    TEMPERATURE_USER_PROMPT: float = float(_env("TEMPERATURE_USER_PROMPT", "0.6"))
+    # Call 2 — citation JSON extraction (deterministic)
+    TEMPERATURE_CITATION_SYSTEM_PROMPT: float = float(_env("TEMPERATURE_CITATION_SYSTEM_PROMPT", "0.0"))
+
     # ── Storage — ChromaDB ────────────────────────────────────────────
     CHROMA_PERSIST_DIR: str = _env("CHROMA_PERSIST_DIR", str(_HERE / "data" / "chromadb"))
     CHROMA_SOURCES_COLLECTION: str = _env("CHROMA_SOURCES_COLLECTION", "sources")
