@@ -70,7 +70,7 @@ can tell fresh extractions from cache hits.
 ### With a URL in the prompt (web fetch)
 
 ```bash
-curl http://localhost:8000/api/generate -H "Content-Type: application/json" -d "{\"model\":\"gemma3:1b\",\"prompt\":\"Summarize https://www.nature.com/articles/s41598-026-39523-2 and cite it.\",\"citations\":true}"
+curl http://localhost:8000/api/generate -H "Content-Type: application/json" -d "{\"model\":\"gemma3:1b\",\"prompt\":\"Summarize https://arxiv.org/html/2504.00358v2 and cite it.\",\"citations\":true}"
 ```
 
 The middleware fetches the URL before the LLM call. The response includes a
@@ -135,10 +135,10 @@ python app.py
 
 It prints a short banner, shows current settings, and waits for your prompt.
 The client builds the JSON body, **prints the exact curl command** it is about
-to execute, runs it, and prints a **trimmed summary** plus the **first 3
-citation records**. The complete JSON response (including the full citation
-list) is saved to `results/<timestamp>_<slug>.json` so the terminal stays
-readable.
+to execute, runs it, and prints the **model's prose answer** followed by a
+**compact metadata summary** and up to **three citation records**. The complete
+JSON response is saved to `results/<timestamp>_<slug>.json` so the terminal
+stays readable.
 
 ```
 Citation Pipeline REPL
@@ -196,20 +196,22 @@ first (Step 5), then launch the REPL in another terminal.
 
 ## What happens under the hood (citations=true)
 
-1. Middleware extracts any URLs from the prompt and fetches them (aiohttp fast path;
-   Playwright fallback for JS-rendered pages like Nature/Springer).
-2. Structured metadata (title, authors, DOI, reference list) is extracted from each
-   fetched page and turned into `CitationRecord` objects directly.
-3. Fetched page text is injected into the prompt as a `<fetched_sources>` block so
-   the LLM can cite real content.
+1. Middleware extracts any URLs from the prompt and fetches them (aiohttp fast
+   path; Playwright fallback for JS-rendered pages like Nature/Springer).
+2. Structured metadata (title, authors, DOI, reference list) is extracted from
+   each fetched page and turned into `CitationRecord` objects directly.
+3. Fetched page text is injected into the prompt as a `<fetched_sources>` block
+   so the LLM can cite real content.
 4. Middleware makes **one** call to Ollama with the enriched prompt, asking for
    `<answer>---REFERENCES---<JSON array>`.
-5. Splits the response at the `---REFERENCES---` marker.
-6. Parses the JSON array into `CitationRecord` objects (filters out stubs); merges
-   with records built from fetched page metadata (deduped by content hash).
+5. Splits the response at the `---REFERENCES---` marker. If the model used a
+   non-standard header, the parser tries common variants before falling back to
+   URL extraction from the references section.
+6. Parses the JSON array into `CitationRecord` objects; merges with records
+   built from fetched page metadata (deduped by content hash).
 7. For each record, computes `source_id` (doi → url → title+authors hash).
-8. Looks up `source_id`s in the ChromaDB `sources` collection. Marks
-   existing ones as `source_cached=true`; inserts new ones.
+8. Looks up `source_id`s in the ChromaDB `sources` collection. Marks existing
+   ones as `source_cached=true`; inserts new ones.
 9. Upserts all records into the ChromaDB `citations` collection.
 10. Returns the response with `citation_records_count`, `citation_metadata`,
     `citation_user`, and `_fetched_sources` attached.
@@ -258,7 +260,7 @@ Everything in [config.py](config.py), overridable via env vars:
 | `connection refused :11434` | Start Ollama: `ollama serve` |
 | `model not found` | `ollama pull gemma3:1b` |
 | `No module named core` | `set PYTHONPATH=.` |
-| Empty `citations: []` | Model didn't follow the `---REFERENCES---` format. Try a larger model (`gemma3:4b`+) or check raw Ollama output for the marker. |
+| `citation_records_count: 0` | The parser handles common header variants and plain URL lists automatically. For persistently empty results, try a larger model (`gemma3:4b`+). |
 | Slow first request | Ollama loading model into GPU — subsequent requests are fast |
 
 ## File map
@@ -268,9 +270,10 @@ citation-pipeline/
 ├── app.py                    ← interactive REPL client (optional)
 ├── config.py                 ← all settings
 ├── core/
-│   ├── extractor.py          ← single Ollama call + output parser
+│   ├── extractor.py          ← single Ollama call + resilient output parser
 │   ├── models.py             ← CitationRecord, Source, A2A views
 │   └── web_fetch.py          ← URL fetcher, HTML→text, Playwright fallback
 ├── middleware/proxy.py       ← FastAPI entry point + reconcile flow
+├── results/                  ← REPL saves full JSON responses here
 └── storage/store.py          ← ChromaDB two-collection store
 ```

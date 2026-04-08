@@ -2,26 +2,38 @@
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-A lightweight middleware proxy between your Ollama client and an Ollama
-backend (Gemma 3). When a prompt is sent with `citations: true`, the
-middleware asks the LLM to emit both its natural-language answer **and**
-a structured JSON list of every source it relied on, then reconciles those
-sources against a ChromaDB cache before returning the response.
+A middleware proxy between an Ollama client and a Gemma 3 backend. When a
+prompt arrives with `citations: true`, the pipeline fetches any URLs in the
+prompt, injects their content into the LLM context, asks the model for a
+structured answer-plus-references block, and reconciles every cited source
+against ChromaDB — all before the response returns to the caller.
 
-## Design principles
+An interactive REPL (`app.py`) drives the full pipeline from a terminal:
+type a prompt, read the model's prose answer and a compact metadata summary,
+review up to three citation records inline, and find the complete JSON payload
+saved to `results/` for later inspection.
 
-- **LLM is the source of truth** for which references were used.
-  No PDF parsing, no regex bibliography detection.
-- **Server-side web fetch** — URLs in the prompt are fetched before the LLM call
-  and injected as `<fetched_sources>` context. Static pages use aiohttp; JS-rendered
-  pages fall back to Playwright (Chromium, headless). The model cites real content.
-- **Single Ollama call** per user prompt. One pass, `temperature=0.0`.
+## How it works
 
-- **ChromaDB as cache**, not vector search. `source_id` lookup is `collection.get()` — O(1), no embeddings on the hot path.
-- **Inline reconcile**. Sources are checked + upserted into ChromaDB
-  **before** the response reaches the user, so the returned
-  `citation_metadata` matches what's stored.
-- **A2A-compatible envelope** — another agent can parse `citation_metadata` directly.
+- **One LLM call per prompt** — the model returns a natural-language answer
+  and a structured JSON references block together, single pass,
+  `temperature=0.0`. The system prompt requires the model to cite its
+  training-knowledge sources for factual answers even when the prompt
+  contains no URLs.
+- **Server-side URL fetch** — URLs found in the prompt are fetched before the
+  LLM call. Static pages use aiohttp; JS-rendered pages (arXiv, Nature,
+  Springer) fall back to headless Chromium via Playwright. The fetched text is
+  injected as a `<fetched_sources>` block so the model cites real, retrieved
+  content.
+- **Inline source deduplication** — each citation is assigned a stable
+  `source_id` (DOI → normalised URL → title+authors hash) and checked against
+  ChromaDB in the same request. New sources are inserted and `source_cached`
+  is set before the response reaches the caller.
+- **Resilient reference parsing** — the extractor handles non-standard section
+  headers (`**REFERENCES:**`, `## References`, …) and recovers plain URL lists
+  into structured citation records when the model omits the JSON block.
+- **A2A-ready envelope** — `citation_metadata` is a structured payload a
+  downstream agent can parse directly.
 
 ## Architecture
 
@@ -174,23 +186,24 @@ The middleware instructs the model (via system prompt in
   "raw_fragment": "...", "confidence": 0.0}]
 ```
 
-If the marker is missing, the answer is returned whole and references
-default to `[]` — graceful degradation.
+If the marker is missing the parser tries common markdown header variants
+before falling back to URL extraction — a partial result is always returned
+in preference to an empty array.
 
 ## File layout
 
 ```
 citation-pipeline/
-├── app.py                    Interactive REPL client (stdlib only, optional)
-├── config.py                 Ollama + ChromaDB + web-fetch settings (single source of truth)
+├── app.py                    Interactive REPL client (stdlib only)
+├── config.py                 Ollama + ChromaDB + web-fetch settings
 ├── core/
 │   ├── models.py             CitationRecord, Source, compute_source_id, A2A views
-│   ├── extractor.py          Single-call Ollama extractor + output parser
+│   ├── extractor.py          Single-call Ollama extractor + resilient output parser
 │   └── web_fetch.py          URL fetcher (aiohttp + Playwright), HTML→text, metadata extraction
 ├── middleware/
 │   └── proxy.py              FastAPI endpoints + inline reconcile flow
 ├── storage/
-│   └── store.py              ChromaDB store with two collections + reconcile
-├── results/                  REPL persists full JSON responses here (created on demand)
+│   └── store.py              ChromaDB store — sources and citations collections
+├── results/                  REPL saves full JSON responses here (created on demand)
 └── requirements.txt          fastapi, uvicorn, aiohttp, chromadb, pydantic, playwright
 ```

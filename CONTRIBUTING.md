@@ -1,7 +1,6 @@
 # Contributing to Citation Pipeline
 
-Thank you for your interest in contributing! This project is licensed under
-Apache 2.0 and welcomes contributions from anyone working with Ollama + Gemma 3.
+Apache 2.0 — contributions welcome.
 
 ## Getting Started
 
@@ -9,39 +8,35 @@ Apache 2.0 and welcomes contributions from anyone working with Ollama + Gemma 3.
 git clone https://github.com/sandrcoast/citation-pipeline
 cd citation-pipeline
 pip install -r requirements.txt
-```
-
-Start the middleware:
-
-```bash
 set PYTHONPATH=.
 uvicorn middleware.proxy:app --host 0.0.0.0 --port 8000
 ```
 
 ## Project Structure
 
-- `app.py` — Interactive REPL client. Stateless thin wrapper over curl; does not manage server/venv/git.
-- `config.py` — All settings. Single source of truth for Ollama + ChromaDB + web-fetch config.
-- `core/models.py` — Data models. Change the schema here; all views update automatically.
-- `core/extractor.py` — Single-call Ollama extractor + output parser.
-- `core/web_fetch.py` — URL fetcher (aiohttp + Playwright fallback), HTML→text, structured metadata extraction.
-- `middleware/proxy.py` — FastAPI entry point + inline reconcile flow.
-- `storage/store.py` — ChromaDB two-collection store (sources + citations).
+| File | Role |
+|---|---|
+| `app.py` | Interactive REPL client. Stateless; drives the middleware over curl and saves full JSON responses to `results/`. |
+| `config.py` | All settings. Single source of truth for Ollama, ChromaDB, and web-fetch config. |
+| `core/models.py` | `CitationRecord`, `Source`, `compute_source_id`, A2A envelope views. Change the schema here. |
+| `core/extractor.py` | Single-call Ollama extractor. Builds the enriched prompt, calls Ollama, and parses the references block with graceful fallbacks for non-standard model output. |
+| `core/web_fetch.py` | URL fetcher — aiohttp fast path, Playwright fallback for JS-rendered pages, HTML→text, structured metadata extraction. |
+| `middleware/proxy.py` | FastAPI entry point. Orchestrates fetch → extract → reconcile and returns the A2A response envelope. |
+| `storage/store.py` | ChromaDB store. `sources` collection for global dedup; `citations` collection for per-prompt records. |
 
 ## How to Contribute
 
-### Adding a New Citation Style
+### Adding a Citation Style
 
-1. Add the style to the `CitationStyle` enum in `core/models.py`
-2. Update the extraction prompt in `core/extractor.py` if needed
+1. Add the style to the `CitationStyle` enum in `core/models.py`.
+2. Update the extraction prompt in `core/extractor.py` if needed.
 
 ### Extending the A2A Metadata
 
 The `to_a2a_meta()` method in `CitationRecord` defines the schema.
 When adding fields:
 - Bump the `version` in `PromptCitationResult.to_a2a_envelope()`
-- Ensure backward compatibility (new fields should have defaults)
-- Document the change in a migration note
+- New fields must have defaults (backward compatibility)
 
 ### Modifying the Storage Layer
 
@@ -53,15 +48,14 @@ When adding fields:
 
 ## Code Style
 
-- Python 3.10+, type hints everywhere
-- Async-first (use `async def` for I/O operations)
-- Pydantic models for data validation
-- Dataclasses for configuration
-- Descriptive comments over clever code
+- Python 3.10+, type hints throughout
+- Async-first — use `async def` for all I/O
+- Pydantic models for data, dataclasses for configuration
+- Single-pass LLM calls only — `temperature=0.0`, no retry loops
 
 ## Reporting Issues
 
-When filing issues, please include:
-- Your Ollama version and Gemma 3 model tag
+Please include:
+- Ollama version and Gemma 3 model tag (`ollama list`)
 - OS and Python version
-- Relevant error output
+- Relevant error output or the saved `results/*.json` file
