@@ -167,10 +167,8 @@ def send_prompt(prompt: str, model: str, citations: bool, base_url: str) -> None
     meta = parsed.get("citation_metadata") if isinstance(parsed, dict) else None
     if isinstance(meta, dict):
         citations = meta.get("citations") or []
-    print("\n--- first 3 citation records ---")
-    if not citations:
-        print("[no citation records returned for this prompt]")
-    else:
+    if citations:
+        print("\n--- first 3 citation records ---")
         print(json.dumps(citations[:3], ensure_ascii=False, indent=2))
 
     try:

@@ -42,6 +42,18 @@ logger = logging.getLogger(__name__)
 
 REFERENCES_MARKER = "---REFERENCES---"
 
+# Matches plain URLs in a text reference list (e.g. markdown links, bare URLs).
+# Used as a last resort when the model emits a URL list instead of JSON.
+_BARE_URL_RE = re.compile(r"https?://[^\s<>()\[\]\"'`]+", re.IGNORECASE)
+
+# Secondary header patterns tolerated when the primary marker is absent.
+# Matches lines like "**REFERENCES:**", "## References", "Sources:", etc.
+# Uses loose [#*]* prefix and [*:]* suffix to handle markdown bold/heading variants.
+_SECONDARY_REF_RE = re.compile(
+    r"(?:^|\n)[ \t]*[#*]*[ \t]*(?:REFERENCES?|Sources?|Bibliography)[*:]*[ \t]*$",
+    re.MULTILINE | re.IGNORECASE,
+)
+
 
 SYSTEM_PROMPT = f"""You are a research assistant whose dual obligation is to (1) answer the user's question AND (2) disclose every information source that influenced your answer — including training-data sources when no web sources are available. Treat citations as a first-class deliverable, not an afterthought.
 
@@ -200,6 +212,9 @@ class CitationExtractor:
         Requires the marker to appear at the start of a line — prevents false
         splits when a small model echoes the system prompt inline
         (e.g. "write the literal marker: ---REFERENCES---").
+
+        Falls back to secondary markdown headers (e.g. "**REFERENCES:**",
+        "## References") when the primary marker is absent.
         Returns (raw, "[]") on malformed output — graceful degradation.
         """
         # Match marker only at start of a line (or at start of string)
@@ -208,6 +223,16 @@ class CitationExtractor:
         )
         matches = list(pattern.finditer(raw))
         if not matches:
+            # Secondary: tolerate common markdown reference-section headers
+            sec_matches = list(_SECONDARY_REF_RE.finditer(raw))
+            if sec_matches:
+                logger.debug("Primary marker missing; split on secondary reference header")
+                last = sec_matches[-1]
+                answer = raw[: last.start()].strip()
+                refs = raw[last.end() :].strip()
+                refs = re.sub(r"^```(?:json)?\s*", "", refs)
+                refs = re.sub(r"\s*```$", "", refs).strip()
+                return (answer, refs or "[]")
             return (raw.strip(), "[]")
 
         # Use last match — tolerates marker appearing in the answer prose
@@ -247,7 +272,7 @@ class CitationExtractor:
                 items = self._salvage_json_objects(refs_json)
 
         if not items or not isinstance(items, list):
-            return []
+            return self._url_list_fallback(refs_json, prompt_id)
 
         records: list[CitationRecord] = []
         seen_cids: set[str] = set()
@@ -307,6 +332,37 @@ class CitationExtractor:
         except Exception as e:
             logger.debug(f"Skipping malformed citation item: {e}")
             return None
+
+    @staticmethod
+    def _url_list_fallback(text: str, prompt_id: str) -> list[CitationRecord]:
+        """
+        Last-resort extraction when the LLM emitted a plain-text or markdown URL
+        list instead of a JSON array. Produces minimal CitationRecords (URL only,
+        low confidence) so the sources are at least tracked in ChromaDB.
+        """
+        urls = list(dict.fromkeys(_BARE_URL_RE.findall(text)))  # dedup, order-preserving
+        if not urls:
+            return []
+        records: list[CitationRecord] = []
+        seen_cids: set[str] = set()
+        for url in urls:
+            try:
+                rec = CitationRecord(
+                    title=url,
+                    source_type=SourceType.UNKNOWN,
+                    authors=[],
+                    access_url=url,
+                    discovery_method=DiscoveryMethod.LLM_KNOWLEDGE,
+                    confidence=0.3,
+                    prompt_id=prompt_id,
+                )
+                if rec.cid not in seen_cids:
+                    seen_cids.add(rec.cid)
+                    records.append(rec)
+            except Exception as e:
+                logger.debug(f"URL fallback record failed for {url!r}: {e}")
+        logger.debug(f"URL-list fallback produced {len(records)} citation record(s)")
+        return records
 
     @staticmethod
     def _salvage_json_objects(text: str) -> list[dict]:

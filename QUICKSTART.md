@@ -165,9 +165,6 @@ $ curl -s -X POST http://localhost:8000/api/generate -H ... -d '{...}'
 --- first 3 citation records ---
 [ {...}, {...}, {...} ]
 
-(or, when the array is empty:)
-[no citation records returned for this prompt]
-
 Full collection of citation records is available in following file in results/260408_201500_arxiv.orghtml25.json
 ```
 
