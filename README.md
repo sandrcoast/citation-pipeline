@@ -47,22 +47,21 @@ sources against a ChromaDB cache before returning the response.
 sequenceDiagram
     actor User
     participant MW as Middleware
-    participant Web as Web (aiohttp/Playwright)
+    participant Web as aiohttp/Playwright
     participant Ollama
     participant Chroma as ChromaDB
 
-    User->>MW: POST /api/generate {prompt, citations:true}
-    MW->>Web: fetch URLs found in prompt (if any)
-    Web-->>MW: FetchedPage[] (title, text, meta, references)
-    MW->>MW: build CitationRecords from page metadata
-    MW->>Ollama: generate enriched prompt (answer + ---REFERENCES--- + JSON)
-    Ollama-->>MW: raw text
-    MW->>MW: split output, parse refs → CitationRecord[]; merge with fetched records
-    MW->>Chroma: get(ids=[source_ids]) — cache lookup
-    Chroma-->>MW: existing source_ids
-    MW->>Chroma: upsert new sources
-    MW->>Chroma: upsert citations (per-prompt)
-    MW-->>User: {response, citation_metadata, citation_user, _fetched_sources}
+    User->>MW: POST /api/generate (prompt, citations=true)
+    MW->>Web: fetch URLs in prompt
+    Web-->>MW: page text + structured metadata
+    MW->>MW: build CitationRecords from metadata
+    MW->>Ollama: enriched prompt (fetched text injected)
+    Ollama-->>MW: answer + references JSON
+    MW->>MW: parse and merge citation records
+    MW->>Chroma: cache lookup by source_id
+    Chroma-->>MW: known source_ids
+    MW->>Chroma: upsert new sources + citations
+    MW-->>User: response + citation_metadata + _fetched_sources
 ```
 
 ## Data model
