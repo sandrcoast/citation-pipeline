@@ -8,42 +8,30 @@ Apache 2.0 and welcomes contributions from anyone working with Ollama + Gemma 3.
 ```bash
 git clone https://github.com/sandrcoast/citation-pipeline
 cd citation-pipeline
-
-# Run tests (no dependencies needed)
-PYTHONPATH=. python tests/test_core_logic.py
-
-# Install dependencies for full stack
 pip install -r requirements.txt
+```
+
+Start the middleware:
+
+```bash
+set PYTHONPATH=.
+uvicorn middleware.proxy:app --host 0.0.0.0 --port 8000
 ```
 
 ## Project Structure
 
+- `config.py` — All settings. Single source of truth for Ollama + ChromaDB config.
 - `core/models.py` — Data models. Change the schema here; all views update automatically.
-- `core/extractor.py` — Extraction engine. Tune concurrency knobs in `ExtractorConfig`.
-- `middleware/proxy.py` — FastAPI proxy. Transparent to Ollama clients unless `citations=true`.
-- `storage/store.py` — Dual storage. Swap ChromaDB ↔ Qdrant via config flag.
-- `samples/` — Test fixtures. Add more sample articles with diverse citation styles.
-- `tests/` — `test_core_logic.py` runs with stdlib only. `test_pipeline.py` needs pip deps.
+- `core/extractor.py` — Single-call Ollama extractor + output parser.
+- `middleware/proxy.py` — FastAPI entry point + inline reconcile flow.
+- `storage/store.py` — ChromaDB two-collection store (sources + citations).
 
 ## How to Contribute
-
-### Adding a New Vector DB Backend
-
-1. Create a class implementing the same interface as `ChromaVectorStore`:
-   - `async initialize()`
-   - `async upsert(records: list[CitationRecord])`
-   - `async search(query: str, limit: int) → list[dict]`
-   - `async delete_by_cids(cids: list[str])`
-   - `count() → int`
-2. Add a config flag in `StoreConfig`
-3. Wire it into `CitationStore.__init__`
 
 ### Adding a New Citation Style
 
 1. Add the style to the `CitationStyle` enum in `core/models.py`
-2. Add a sample article in `samples/` demonstrating the style
-3. Update the extraction prompt in `core/extractor.py` if needed
-4. Add expected extraction results to the sample article
+2. Update the extraction prompt in `core/extractor.py` if needed
 
 ### Extending the A2A Metadata
 
@@ -53,6 +41,14 @@ When adding fields:
 - Ensure backward compatibility (new fields should have defaults)
 - Document the change in a migration note
 
+### Modifying the Storage Layer
+
+`CitationStore` in `storage/store.py` exposes:
+- `reconcile_sources(records, prompt_id)` — cache lookup + insert new sources
+- `store_prompt_result(result)` — upsert citations for a prompt
+- `get_by_prompt(prompt_id)` — retrieve by prompt
+- `semantic_search(query, limit)` — full-text search over stored citations
+
 ## Code Style
 
 - Python 3.10+, type hints everywhere
@@ -61,23 +57,9 @@ When adding fields:
 - Dataclasses for configuration
 - Descriptive comments over clever code
 
-## Testing
-
-```bash
-# Stdlib-only tests (always run these)
-PYTHONPATH=. python tests/test_core_logic.py
-
-# Full integration tests (needs pip dependencies)
-PYTHONPATH=. pytest tests/test_pipeline.py -v
-```
-
-All PRs must pass the stdlib-only test suite at minimum.
-
 ## Reporting Issues
 
 When filing issues, please include:
 - Your Ollama version and Gemma 3 model tag
-- OS
-- Python version
-- Whether you're using ChromaDB or Qdrant
+- OS and Python version
 - Relevant error output
