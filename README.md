@@ -76,12 +76,15 @@ pip install -r requirements.txt
 # 2. Verify Ollama is running with a Gemma 3 model
 ollama list   # expect gemma3:1b or similar
 
-# 3. Run tests (no Ollama, no ChromaDB required)
-PYTHONPATH=. python tests/test_pipeline.py
-
-# 4. Start the middleware
+# 3. Start the middleware
 PYTHONPATH=. uvicorn middleware.proxy:app --host 0.0.0.0 --port 8000
 ```
+
+> **Gemma 3:1b token limits** — 8 192-token context window. The pipeline
+> allocates `num_ctx=8192` and `num_predict=4096` (output budget). The system
+> prompt consumes ~400 tokens, leaving roughly **3 700 tokens (~2 800 words)**
+> for the user query. Keep prompts under ~2 000 words to leave headroom for
+> the references JSON block in the response.
 
 ### Transparent pass-through (citations=false)
 
@@ -180,20 +183,5 @@ citation-pipeline/
 │   └── store.py              ChromaDB store with two collections + reconcile
 ├── ollama_patch/
 │   └── Modelfile             Optional citation-aware model tag
-├── tests/
-│   └── test_pipeline.py      Unit tests (no Ollama / Chroma required)
-├── docker-compose.yml        Ollama + middleware
-├── Dockerfile                Middleware image
 └── requirements.txt          fastapi, uvicorn, aiohttp, chromadb, pydantic
 ```
-
-## What this pipeline is NOT
-
-- Not a web scraper — no SearXNG, no trafilatura, no URL fetching.
-- Not a PDF extractor — no pdfplumber, no bibliography regex.
-- Not a CrossRef client — no DOI enrichment.
-- Not a relational store — no PostgreSQL, no SQLite, no TTL cleanup loop.
-
-All of the above were removed in the v0.2 refactor. The LLM is asked to
-disclose its sources; the middleware trusts that disclosure, dedupes it
-against a cache, and stores it. That's the entire PoC.

@@ -43,18 +43,9 @@ ollama create gemma3-1b-cite -f ollama_patch/Modelfile
 pip install -r requirements.txt
 ```
 
-Six packages total: fastapi, uvicorn, pydantic, aiohttp, chromadb, pytest.
+Five packages: fastapi, uvicorn, pydantic, aiohttp, chromadb.
 
-## Step 6: Run tests (no Ollama needed)
-
-```bash
-set PYTHONPATH=.
-python tests/test_pipeline.py
-```
-
-Expected: `Results: 9/9 passed`.
-
-## Step 7: Start the middleware
+## Step 6: Start the middleware
 
 ```bash
 set PYTHONPATH=.
@@ -63,7 +54,7 @@ uvicorn middleware.proxy:app --host 0.0.0.0 --port 8000
 
 ChromaDB persists to `./data/chromadb/` — created on first write.
 
-## Step 8: Try it
+## Step 7: Try it
 
 ### Transparent proxy (no citations)
 
@@ -101,6 +92,36 @@ curl "http://localhost:8000/api/citations/search/attention%20mechanisms"
 curl http://localhost:8000/health
 ```
 
+### Verify ChromaDB collections manually
+
+After sending at least one request with `citations: true`, confirm data was stored:
+
+```bash
+# Count and preview sources (global dedup table)
+python -c "
+import chromadb
+client = chromadb.PersistentClient(path='./data/chromadb')
+col = client.get_collection('sources')
+print('sources count:', col.count())
+result = col.get(limit=5, include=['metadatas'])
+for i, meta in enumerate(result['metadatas']):
+    print(f'  [{i}]', meta.get('title', '?'), '|', meta.get('source_type', '?'))
+"
+
+# Count and preview citations (per-prompt records)
+python -c "
+import chromadb
+client = chromadb.PersistentClient(path='./data/chromadb')
+col = client.get_collection('citations')
+print('citations count:', col.count())
+result = col.get(limit=5, include=['metadatas'])
+for i, meta in enumerate(result['metadatas']):
+    print(f'  [{i}]', meta.get('title', '?'), '| prompt:', str(meta.get('prompt_id', '?'))[:8])
+"
+```
+
+Both commands run against the embedded ChromaDB at `./data/chromadb/` — no server needed.
+
 ## What happens under the hood (citations=true)
 
 1. Middleware makes **one** call to Ollama with a system prompt asking for
@@ -131,6 +152,22 @@ Everything in [config.py](config.py), overridable via env vars:
 | `CHROMA_CITATIONS_COLLECTION` | `citations` | Per-prompt records collection |
 | `MIDDLEWARE_PORT` | `8000` | HTTP port |
 
+## Gemma 3:1b token limits
+
+| Setting | Value | Notes |
+|---|---|---|
+| Context window (`num_ctx`) | 8 192 tokens | Total capacity for input + output |
+| Output budget (`num_predict`) | 4 096 tokens | Max tokens the model will generate |
+| System prompt overhead | ~400 tokens | Reserved by the pipeline |
+| **Effective user query budget** | **~3 700 tokens** | ≈ 2 800 words |
+
+Keep prompts under **~2 000 words** to leave comfortable headroom for the
+references JSON block. For longer source documents, summarize or chunk before
+sending. Use `gemma3:4b` or larger if you need more input capacity.
+
+> The pipeline uses **text-only** capabilities of the Gemma API.
+> No vision, no multimodal inputs.
+
 ## Troubleshooting
 
 | Problem | Fix |
@@ -151,6 +188,5 @@ citation-pipeline/
 │   └── models.py             ← CitationRecord, Source, A2A views
 ├── middleware/proxy.py       ← FastAPI entry point + reconcile flow
 ├── storage/store.py          ← ChromaDB two-collection store
-├── ollama_patch/Modelfile    ← optional deterministic model tag
-└── tests/test_pipeline.py    ← unit tests, no Ollama needed
+└── ollama_patch/Modelfile    ← optional deterministic model tag
 ```
