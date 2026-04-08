@@ -154,7 +154,19 @@ class CitationExtractor:
     ) -> str:
         if not fetched_pages:
             return user_prompt
-        lines: list[str] = ["<fetched_sources>"]
+        # Inline the full system prompt at the top of the user message when
+        # fetched sources are present. Small models (gemma3:1b) attend weakly
+        # to Ollama's `system` field once a large <fetched_sources> block
+        # dominates context — co-locating the contract with the content
+        # restores the citation obligation. The `system` field is still sent
+        # via _call_ollama; this is belt-and-suspenders.
+        lines: list[str] = [
+            "=== INSTRUCTIONS (read before answering) ===",
+            SYSTEM_PROMPT,
+            "=== END INSTRUCTIONS ===",
+            "",
+            "<fetched_sources>",
+        ]
         for i, page in enumerate(fetched_pages, start=1):
             lines.append(f"[{i}] URL: {page.final_url or page.url}")
             if page.title:
@@ -170,6 +182,16 @@ class CitationExtractor:
         lines.append("")
         lines.append("USER QUESTION:")
         lines.append(user_prompt)
+        lines.append("")
+        lines.append(
+            "REMINDER (citation contract): keep your answer focused and concise so the "
+            f"references block fits. After your answer, on a new line by itself, write "
+            f"the literal marker {REFERENCES_MARKER} and then a single JSON array. The "
+            "array MUST contain one entry for EACH fetched source above that informed "
+            "your answer — use its exact URL as the \"url\" field and the page TITLE "
+            "as the \"title\". Add training-knowledge citations only after the fetched "
+            "ones. Do not skip the marker. Do not output an empty array."
+        )
         return "\n".join(lines)
 
     # ── Ollama call ───────────────────────────────────────────────────
